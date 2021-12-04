@@ -25,11 +25,35 @@ export class ListItemService extends BaseService {
     return of(JSON.parse(listStr));
   }
 
+  completeItem(listID: string, item: ListItem): Observable<boolean> {
+    const listStr = localStorage.getItem(`list-${listID}`);
+    if (listStr == null) {
+      console.warn(
+        `Tried to complete item ${item.name} from unknown list ${listID}`
+      );
+      return of(false);
+    }
+    const items: ListItem[] = JSON.parse(listStr);
+    const existingItem = items.findIndex((it) => item.name === it.name);
+    if (existingItem === -1) {
+      console.warn(`Tried to complete item which did not exist ${item.name}`);
+      return of(false);
+    }
+    if (items[existingItem].checked) {
+      console.debug(`Item ${item.name} was already complete`);
+      return of(true);
+    }
+    console.debug(`Checked item ${item.name} on list ${listID}`);
+    items[existingItem].checked = true;
+    localStorage.setItem(`list-${listID}`, JSON.stringify(items));
+    return of(true);
+  }
+
   // apply update to the list and return if successful
   applyUpdate(listID: string, update: ListUpdate): Observable<boolean> {
     const listStr = localStorage.getItem(`list-${listID}`);
     if (listStr == null && update.quantityDiff <= 0) {
-      console.debug(
+      console.warn(
         `Tried to remove item ${update.name} from unknown list ${listID}`
       );
       return of(false);

@@ -1,7 +1,7 @@
 /* eslint-disable object-shorthand */
 import { Component, OnInit } from '@angular/core';
 import { ListItem } from '../shared/models/list-item';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { ListItemService } from '../shared/services/list-item.service';
 
 @Component({
@@ -14,6 +14,7 @@ export class ListPage implements OnInit {
   items: ListItem[] = [];
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private listItemService: ListItemService
   ) {}
 
@@ -28,6 +29,10 @@ export class ListPage implements OnInit {
     this.listItemService
       .getAll(this.listID)
       .subscribe((items) => (this.items = items));
+  }
+
+  onShop() {
+    this.router.navigate(['/shop', this.listID]);
   }
 
   onApplyDiff(item: ListItem, quantityDiff: number) {

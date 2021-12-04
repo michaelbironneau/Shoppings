@@ -8,28 +8,57 @@
 </ion-header>
 
 <ion-content>
+  <div *ngIf="progress===1">
+    <ion-grid style="height: 100%; margin-top: 25%">
+      <ion-row justify-content-center align-items-center style="height: 100%">
+        <ion-col size="8" offset="2">
+          <ion-card>
+            <ion-card-header
+              ><strong>Boom! </strong>You're all done</ion-card-header
+            >
+            <ion-card-content>
+              <p>You've finished your shopping. There's nothing to see here.</p>
+              <ion-button color="success" (click)="onArchiveList()"
+                ><ion-icon name="archive-outline"></ion-icon>&nbsp;Archive
+                list</ion-button
+              >
+              <ion-button color="secondary" (click)="onNavigateList()"
+                ><ion-icon name="bag-add-outline"></ion-icon>&nbsp;Add more
+                items</ion-button
+              >
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
   <div id="list-items">
     <ion-list>
       <ion-item-sliding *ngFor="let item of items">
-        <ion-item>
-          <ion-label>{{item.name}}</ion-label>
-          <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
-            >{{item.quantity}}</ion-badge
-          >
-        </ion-item>
+        <div *ngIf="!item.checked">
+          <ion-item>
+            <ion-label>{{item.name}}</ion-label>
+            <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
+              >{{item.quantity}}</ion-badge
+            >
+          </ion-item>
 
-        <ion-item-options side="end">
-          <ion-item-option color="success">Check off</ion-item-option>
-        </ion-item-options>
+          <ion-item-options side="end">
+            <ion-item-option (click)="onComplete(item)" color="success"
+              >Check off</ion-item-option
+            >
+          </ion-item-options>
+        </div>
       </ion-item-sliding>
     </ion-list>
   </div>
 
   <div id="progress-bar" slot="fixed">
-    <ion-progress-bar value="0.75" color="success"></ion-progress-bar>
+    <ion-progress-bar [value]="progress" color="success"></ion-progress-bar>
     <h3 class="ion-text-center">
       <ion-icon name="bag-check-outline" class="ion-padding-end"></ion-icon
-      >30/40 items
+      >{{completed}}/{{total}} items
     </h3>
   </div>
 </ion-content>
