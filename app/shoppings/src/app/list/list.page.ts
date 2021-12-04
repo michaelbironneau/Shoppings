@@ -12,6 +12,8 @@ import { ListItemService } from '../shared/services/list-item.service';
 export class ListPage implements OnInit {
   listID: string;
   items: ListItem[] = [];
+  searchString = null;
+  searchResults: ListItem[] = [];
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -29,6 +31,49 @@ export class ListPage implements OnInit {
     this.listItemService
       .getAll(this.listID)
       .subscribe((items) => (this.items = items));
+  }
+
+  onSearchCancel() {
+    this.searchResults = [];
+    this.searchString = null;
+  }
+
+  onAddCustom() {
+    this.listItemService
+      .applyUpdate(this.listID, {
+        name: this.searchString,
+        quantityDiff: 1,
+      })
+      .subscribe(() => {
+        this.refresh();
+        this.onSearchCancel();
+      });
+  }
+  onAdd(result) {
+    this.listItemService
+      .applyUpdate(this.listID, {
+        name: result.name,
+        quantityDiff: 1,
+      })
+      .subscribe(() => {
+        this.refresh();
+        this.onSearchCancel();
+      });
+  }
+
+  onSearch(e) {
+    if (e.target.value.length === 0) {
+      this.onSearchCancel();
+      return;
+    }
+    this.searchString =
+      e.target.value[0].toUpperCase() + e.target.value.substring(1);
+    this.listItemService
+      .searchAutocomplete(e.target.value)
+      .subscribe((results) => {
+        this.searchResults = results;
+        console.log(this.searchResults);
+      });
   }
 
   onShop() {

@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators';
 import { seedListItemsA, seedListItemsB } from '../seed-data/list-items';
 import { ListItem } from '../models/list-item';
 import { ListUpdate } from '../models/list-update';
+import { autocompleteItems } from '../seed-data/autocomplete';
 
 // run once
 localStorage.setItem('list-aaaa', JSON.stringify(seedListItemsA));
@@ -23,6 +24,21 @@ export class ListItemService extends BaseService {
       return of([]);
     }
     return of(JSON.parse(listStr));
+  }
+
+  searchAutocomplete(needle: string): Observable<ListItem[]> {
+    console.debug(`Searching for ${needle}`);
+    const hits = autocompleteItems.filter(
+      (item) => item.toLowerCase().indexOf(needle.toLowerCase()) !== -1
+    );
+    const itemsToReturn = hits.map((hit: string) => ({
+      name: hit,
+      checked: false,
+      listId: null,
+      quantity: 1,
+    }));
+    console.debug(`Returning ${itemsToReturn.length} hits`);
+    return of(itemsToReturn);
   }
 
   completeItem(listID: string, item: ListItem): Observable<boolean> {
@@ -83,6 +99,7 @@ export class ListItemService extends BaseService {
         quantity: update.quantityDiff,
         checked: false,
       });
+      localStorage.setItem(`list-${listID}`, JSON.stringify(items));
       return of(true);
     }
 

@@ -7,49 +7,82 @@
   </ion-toolbar>
 </ion-header>
 <ion-content>
-  <ion-searchbar placeholder="Add item..."></ion-searchbar>
-  <div id="searchbar-items"></div>
+  <ion-searchbar
+    animated
+    placeholder="Add item..."
+    (ionChange)="onSearch($event)"
+    (ionCancel)="onSearchCancel()"
+    (ionClear)="onSearchCancel()"
+  ></ion-searchbar>
+  <ion-grid>
+    <ion-row>
+      <ion-col>
+        <h3 *ngIf="searchString">Suggestions</h3>
+        <div id="searchbar-items">
+          <ion-list>
+            <ion-item
+              button="true"
+              (click)="onAdd(result)"
+              *ngFor="let result of searchResults"
+            >
+              <ion-label>{{result.name}}</ion-label>
+            </ion-item>
+            <ion-item
+              button="true"
+              (click)="onAddCustom()"
+              *ngIf="searchString && searchString.length > 2"
+            >
+              <ion-label>Add '{{searchString}}'</ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col>
+        <h3>Items</h3>
+        <div id="list-items">
+          <ion-list>
+            <ion-item-sliding *ngFor="let item of items">
+              <ion-item>
+                <ion-label>{{item.name}}</ion-label>
+                <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
+                  >{{item.quantity}}</ion-badge
+                >
+              </ion-item>
 
-  <div id="list-items">
-    <ion-list>
-      <ion-item-sliding *ngFor="let item of items">
-        <ion-item>
-          <ion-label>{{item.name}}</ion-label>
-          <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
-            >{{item.quantity}}</ion-badge
-          >
-        </ion-item>
-
-        <ion-item-options side="end">
-          <ion-item-option (click)="onApplyDiff(item, 1)" color="success"
-            >&nbsp;+&nbsp;</ion-item-option
-          >
-          <ion-item-option
-            (click)="onApplyDiff(item, -1)"
-            color="warning"
-            *ngIf="item.quantity>0"
-            >&nbsp;-&nbsp;</ion-item-option
-          >
-          <ion-item-option
-            (click)="onApplyDiff(item, -1*item.quantity)"
-            color="danger"
-            >Delete</ion-item-option
-          >
-        </ion-item-options>
-      </ion-item-sliding>
-    </ion-list>
-  </div>
-
-  <div id="fab-shop">
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button
-        (click)="onShop()"
-        color="success"
-        size="large"
-        style="margin-left: 25%"
-        ><ion-icon name="play"></ion-icon
-      ></ion-fab-button>
-      <ion-label>Go shoppings</ion-label>
-    </ion-fab>
-  </div>
+              <ion-item-options side="end">
+                <ion-item-option (click)="onApplyDiff(item, 1)" color="success"
+                  >&nbsp;+&nbsp;</ion-item-option
+                >
+                <ion-item-option
+                  (click)="onApplyDiff(item, -1)"
+                  color="warning"
+                  *ngIf="item.quantity>0"
+                  >&nbsp;-&nbsp;</ion-item-option
+                >
+                <ion-item-option
+                  (click)="onApplyDiff(item, -1*item.quantity)"
+                  color="danger"
+                  >Delete</ion-item-option
+                >
+              </ion-item-options>
+            </ion-item-sliding>
+          </ion-list>
+        </div>
+      </ion-col>
+    </ion-row>
+    <div id="fab-shop">
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button
+          (click)="onShop()"
+          color="success"
+          size="large"
+          style="margin-left: 25%"
+          ><ion-icon name="play"></ion-icon
+        ></ion-fab-button>
+        <ion-label>Go shoppings</ion-label>
+      </ion-fab>
+    </div>
+  </ion-grid>
 </ion-content>
