@@ -14,7 +14,7 @@
   <div id="lists" *ngIf="lists&&lists.length>0">
     <ion-list>
       <ion-item-sliding *ngFor="let list of lists">
-        <ion-item button="true" href="/list">
+        <ion-item button="true" (click)="onOpen(list)">
           <ion-avatar slot="start">
             <ion-icon
               size="large"
@@ -24,22 +24,26 @@
           </ion-avatar>
           <ion-label
             ><h2>{{list.name}}</h2>
-            <p>Onions, carrots, lunch...</p>
+            <p>{{list.summary}}</p>
           </ion-label>
         </ion-item>
         <ion-item-options side="end">
-          <ion-item-option color="danger">Archive</ion-item-option>
+          <ion-item-option (click)="onArchive(list.id)" color="danger"
+            >Archive</ion-item-option
+          >
         </ion-item-options>
       </ion-item-sliding>
     </ion-list>
   </div>
 
   <div id="no-lists" *ngIf="!lists||lists.length===0">
-    <ion-grid style="height: 100%">
+    <ion-grid style="height: 100%; margin-top: 25%">
       <ion-row justify-content-center align-items-center style="height: 100%">
         <ion-col size="8" offset="2">
           <ion-card>
-            <ion-card-header>You are a listless wonder</ion-card-header>
+            <ion-card-header
+              ><strong>You </strong>are a listless wonder.</ion-card-header
+            >
             <ion-card-content>
               <p>Awesome! You've done all your shopping.</p>
               <br />
@@ -55,6 +59,8 @@
   </div>
 
   <ion-fab vertical="bottom" horizontal="center" slot="fixed">
-    <ion-fab-button><ion-icon name="add"></ion-icon></ion-fab-button>
+    <ion-fab-button (click)="onAdd()"
+      ><ion-icon name="add"></ion-icon
+    ></ion-fab-button>
   </ion-fab>
 </ion-content>
