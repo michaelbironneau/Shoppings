@@ -13,7 +13,7 @@
 
   <div id="lists" *ngIf="lists&&lists.length>0">
     <ion-list>
-      <ion-item button="true" *ngFor="let list of lists">
+      <ion-item button="true" href="/list" *ngFor="let list of lists">
         <ion-avatar slot="start">
           <ion-icon size="large" name="list-circle" color="primary"></ion-icon>
         </ion-avatar>

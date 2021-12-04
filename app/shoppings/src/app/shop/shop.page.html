@@ -1,9 +1,32 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>shop</ion-title>
+    <ion-title>Shop List</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
+  <div id="list-items">
+    <ion-list>
+      <ion-item-sliding *ngFor="let item of items">
+        <ion-item>
+          <ion-label>{{item.name}}</ion-label>
+          <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
+            >{{item.quantity}}</ion-badge
+          >
+        </ion-item>
 
+        <ion-item-options side="end">
+          <ion-item-option color="success">Check off</ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </div>
+
+  <div id="progress-bar" slot="fixed">
+    <ion-progress-bar value="0.75" color="success"></ion-progress-bar>
+    <h3 class="ion-text-center">
+      <ion-icon name="bag-check-outline" class="ion-padding-end"></ion-icon
+      >30/40 items
+    </h3>
+  </div>
 </ion-content>
