@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>List</ion-title>
+  </ion-toolbar>
+</ion-header>
+<ion-searchbar placeholder="Add item..."></ion-searchbar>
+<div id="searchbar-items"></div>
+
+<div id="list-items">
+  <ion-list>
+    <ion-item-sliding *ngFor="let item of items">
+      <ion-item>
+        <ion-label>{{item.name}}</ion-label>
+        <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
+          >{{item.quantity}}</ion-badge
+        >
+      </ion-item>
+
+      <ion-item-options side="end">
+        <ion-item-option color="success">+</ion-item-option>
+        <ion-item-option color="warning" *ngIf="item.quantity>0"
+          >-</ion-item-option
+        >
+        <ion-item-option color="danger">Delete</ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+  </ion-list>
+</div>
+
+<div id="fab-shop">
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button color="success" size="large" style="margin-left: 25%"
+      ><ion-icon name="play"></ion-icon
+    ></ion-fab-button>
+    <ion-label>Go shoppings</ion-label>
+  </ion-fab>
+</div>
+<ion-content> </ion-content>

@@ -11,8 +11,41 @@
     </ion-toolbar>
   </ion-header>
 
-  <div id="container">
-    <strong>Hello, world!</strong>
-    <p>This is the start of many great things.</p>
+  <div id="lists" *ngIf="lists&&lists.length>0">
+    <ion-list>
+      <ion-item button="true" *ngFor="let list of lists">
+        <ion-avatar slot="start">
+          <ion-icon size="large" name="list-circle" color="primary"></ion-icon>
+        </ion-avatar>
+        <ion-label
+          ><h2>{{list.name}}</h2>
+          <p>Onions, carrots, lunch...</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
   </div>
+
+  <div id="no-lists" *ngIf="!lists||lists.length===0">
+    <ion-grid style="height: 100%">
+      <ion-row justify-content-center align-items-center style="height: 100%">
+        <ion-col size="8" offset="2">
+          <ion-card>
+            <ion-card-header>You are a listless wonder</ion-card-header>
+            <ion-card-content>
+              <p>Awesome! You've done all your shopping.</p>
+              <br />
+              <p>
+                When you're ready for more, press the "+" button below to create
+                a new list.
+              </p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <ion-fab vertical="bottom" horizontal="center" slot="fixed">
+    <ion-fab-button><ion-icon name="add"></ion-icon></ion-fab-button>
+  </ion-fab>
 </ion-content>
