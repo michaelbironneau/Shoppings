@@ -1,9 +1,22 @@
-package main
+package api
 
 import (
 	"database/sql"
 	"log"
 )
+
+var (
+	Err401 = &Error{"Unauthorized. Please check username and password."}
+	Err500 = &Error{"Unexpected error. Please try again later."}
+)
+
+type Error struct {
+	Message string `json:"error"`
+}
+
+func (e *Error) Error() string {
+	return e.Message
+}
 
 func getPrincipal(db *sql.DB, token string) (string, error) {
 	var res sql.NullString
@@ -17,4 +30,12 @@ func getPrincipal(db *sql.DB, token string) (string, error) {
 		return "", Err401
 	}
 	return res.String, nil
+}
+
+func dbError(err error) error {
+	if err == nil {
+		return nil
+	}
+	log.Printf("Database error: %v", err)
+	return Err500
 }
