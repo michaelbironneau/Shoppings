@@ -9,7 +9,7 @@ type List struct {
 }
 
 type ListItem struct {
-	ID         string `json:"id"`
+	ItemID     string `json:"id"`
 	ListID     string `json:"listId"`
 	Name       string `json:"name"`
 	Quantity   string `json:"quantity"`
@@ -18,12 +18,16 @@ type ListItem struct {
 }
 
 type ListUpdate struct {
-	ItemName     string `json:"name"`
-	QuantityDiff int    `json:"quantityDiff"`
-	User         string `json:"user"`
+	UpdateTime int        `json:"updatedAt"`
+	Updates    []ListItem `json:"updates"`
 }
 
 type Store struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type Item struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }

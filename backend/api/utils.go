@@ -6,11 +6,12 @@ import (
 )
 
 var (
-	Err401 = &Error{"Unauthorized. Please check username and password."}
-	Err500 = &Error{"Unexpected error. Please try again later."}
+	Err401 = &Error{Code: 401, Message: "Unauthorized. Please check username and password."}
+	Err500 = &Error{Code: 500, Message: "Unexpected error. Please try again later."}
 )
 
 type Error struct {
+	Code    int    `json:"-"`
 	Message string `json:"error"`
 }
 

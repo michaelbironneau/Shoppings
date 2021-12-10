@@ -12,12 +12,14 @@ import (
 )
 
 func registerHandlers(app *fiber.App, db *sql.DB) {
-	app.Post("/token", api.GetToken)
+	app.Post("/token", func(c *fiber.Ctx) error {
+		return api.GetToken(c, db)
+	})
 	app.Get("/lists", func(c *fiber.Ctx) error {
 		return api.GetLists(c, db)
 	})
 	app.Post("/lists", func(c *fiber.Ctx) error {
-		return nil
+		return api.InsertList(c, db)
 	})
 	app.Post("/lists/:id/archive", func(c *fiber.Ctx) error {
 		return api.SetListArchived(c, db, 1)
@@ -29,7 +31,7 @@ func registerHandlers(app *fiber.App, db *sql.DB) {
 		return api.GetList(c, db)
 	})
 	app.Put("/lists/:id", func(c *fiber.Ctx) error {
-		return nil
+		return api.UpdateList(c, db)
 	})
 	app.Get("/lists/:id/updates/:since", func(c *fiber.Ctx) error {
 		return nil
@@ -37,10 +39,19 @@ func registerHandlers(app *fiber.App, db *sql.DB) {
 	app.Post("/lists/:id/updates", func(c *fiber.Ctx) error {
 		return nil
 	})
-	app.Post("/lists/:id/items/complete/:item", func(c *fiber.Ctx) error {
+	app.Get("/lists/:id/items", func(c *fiber.Ctx) error {
 		return nil
 	})
+	app.Post("/lists/:id/items", func(c *fiber.Ctx) error {
+		return nil
+	})
+	app.Post("/lists/:id/items/:item/complete", func(c *fiber.Ctx) error {
+		return api.CheckItem(c, db)
+	})
 	app.Get("/item-search/:needle", func(c *fiber.Ctx) error {
+		return api.SearchItem(c, db)
+	})
+	app.Post("/items", func(c *fiber.Ctx) error {
 		return nil
 	})
 }
@@ -51,7 +62,17 @@ func main() {
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %w \n", err))
 	}
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		// Override default error handler
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			if e, ok := err.(*api.Error); ok {
+				code = e.Code
+			}
+			err = ctx.Status(code).JSON(err.(*api.Error))
+			return nil
+		},
+	})
 	var db *sql.DB
 	for {
 		db, err = NewDB(viper.GetString("server"), viper.GetString("username"), viper.GetString("password"), viper.GetString("database"), LogLevelMedium)

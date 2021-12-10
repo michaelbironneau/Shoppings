@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func GetToken(ctx *fiber.Ctx) error {
+func GetToken(ctx *fiber.Ctx, db *sql.DB) error {
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
