@@ -20,7 +20,7 @@ ON TARGET.ListId = up.ListId AND (up.ItemId = TARGET.ItemId OR up.[Name] = TARGE
 WHEN MATCHED THEN
 	UPDATE SET TARGET.Quantity = up.Quantity, TARGET.Username = up.Username
 WHEN NOT MATCHED THEN 
-	INSERT (TARGET.[ListId], TARGET.[ItemId], TARGET.[Name], TARGET.Quantity, TARGET.Username)
+	INSERT ([ListId], [ItemId], [Name], Quantity, Username)
 		VALUES (up.ListId, up.ItemId, up.[Name], up.Quantity, up.Username);`
 
 func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
@@ -29,7 +29,6 @@ func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 		itemID *int
 		err    error
 	)
-	log.Printf("Adding item %+v to list %v", item, listID)
 	// 1. If there's no ItemID, try to create one
 	if item.ItemID == "" {
 		if item.Name == "" {
@@ -37,7 +36,7 @@ func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 		}
 		// try to convert the "custom" item over to an App.Item by looking up in App.Item
 		// see if we have any matching items in App.Item
-		row := db.QueryRow("SELECT TOP 1 CAST(ItemId AS VARCHAR(255)) FROM App.Item WHERE [Name] LIKE @InItemName", item.Name)
+		row := db.QueryRow("SELECT TOP 1 CAST(ItemId AS VARCHAR(255)) FROM App.Item WHERE [Name] LIKE @InItemName", sql.Named("InItemName", item.Name))
 		var newItemID string
 		if err := row.Scan(&newItemID); err != nil && err != sql.ErrNoRows {
 			return dbError(err)
@@ -110,7 +109,7 @@ func GetItems(c *fiber.Ctx, db *sql.DB, since int) error {
 	s := `
 SELECT 
 	LI.ListId, 
-	LI.ItemId, 
+	ISNULL(LI.ItemId, ''), 
 	ISNULL(ISNULL(I.Name, LI.Name),'') AS [Name], 
 	Quantity, 
 	Checked, 
@@ -229,9 +228,9 @@ func GetLists(c *fiber.Ctx, db *sql.DB) error {
 FROM App.List L
 LEFT JOIN App.Store S ON L.StoreId = S.StoreID
 OUTER APPLY (
-	SELECT TOP 3 I.Name 
+	SELECT TOP 3 ISNULL(I.Name, LI.Name) As [Name] 
 	FROM App.ListItem LI 
-	INNER JOIN App.Item I ON I.ItemId = LI.ItemId
+	LEFT JOIN App.Item I ON I.ItemId = LI.ItemId
 	WHERE LI.ListId = L.ListId AND LI.Checked = 0
 ) LL
 WHERE L.Archived = 0
@@ -268,13 +267,13 @@ func GetList(c *fiber.Ctx, db *sql.DB) error {
 	CAST(L.ListId AS VARCHAR(255)) AS 'ID',
 	ISNULL(L.Name, '') As 'ListName',
 	ISNULL(S.Name, '') AS 'StoreName',
-	STRING_AGG(LL.Name, ', ') AS 'Summary'
+	ISNULL(STRING_AGG(LL.Name, ', '), '') AS 'Summary'
 FROM App.List L
-INNER JOIN App.Store S ON L.StoreId = S.StoreID
+LEFT JOIN App.Store S ON L.StoreId = S.StoreID
 OUTER APPLY (
-	SELECT TOP 3 I.Name 
+	SELECT TOP 3 ISNULL(I.Name, LI.Name) As [Name] 
 	FROM App.ListItem LI 
-	INNER JOIN App.Item I ON I.ItemId = LI.ItemId
+	LEFT JOIN App.Item I ON I.ItemId = LI.ItemId
 	WHERE LI.ListId = L.ListId AND LI.Checked = 0
 ) LL
 WHERE L.ListId = @InListId

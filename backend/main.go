@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/michaelbironneau/shoppings/backend/api"
 	"github.com/spf13/viper"
 	"log"
@@ -90,6 +91,7 @@ func main() {
 		time.Sleep(time.Second * 5)
 	}
 	app.Use(cors.New())
+	app.Use(logger.New())
 	registerHandlers(app, db)
 	app.Listen(":8080")
 }

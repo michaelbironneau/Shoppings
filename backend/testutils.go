@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/michaelbironneau/shoppings/backend/api"
 	"io"
 	"io/ioutil"
@@ -22,10 +23,13 @@ func resetTestDB(db *sql.DB) error {
 		EXECUTE [Security].[uspAddPrincipal] 
    		'TestUser'
   		,'TestPass';
+		DELETE FROM App.ListItem;
 		DELETE FROM App.[List];
 		TRUNCATE TABLE App.StoreOrder;
 		DELETE FROM App.Store;
-		DELETE FROM App.Item `)
+		DELETE FROM App.Item;
+		INSERT INTO App.Store ([Name]) VALUES ('Tesco');
+		INSERT INTO App.Store ([Name]) VALUES ('Budgens');`)
 	return err
 }
 
@@ -34,6 +38,7 @@ func SetupTestAPI() (*fiber.App, string, error) {
 		// Override default error handler
 		ErrorHandler: HandleError,
 	})
+	app.Use(logger.New())
 	db, err := newTestDB()
 	if err != nil {
 		return nil, "", err

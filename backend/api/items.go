@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"log"
+	"strconv"
 )
 
 func GetStores(c *fiber.Ctx, db *sql.DB) error {
@@ -14,7 +15,7 @@ func GetStores(c *fiber.Ctx, db *sql.DB) error {
 		return err
 	}
 	var stores []Store
-	rows, err := db.Query("SELECT CAST(StoreID AS VARCHAR(255)), [Name] FROM App.Store")
+	rows, err := db.Query("SELECT CAST(StoreID AS VARCHAR(255)), [Name] FROM App.Store ORDER BY StoreId")
 	if err != nil {
 		return dbError(err)
 	}
@@ -49,8 +50,15 @@ func AddItem(c *fiber.Ctx, db *sql.DB) error {
 		log.Printf("Found existing item when trying to add item")
 		return &Error{Code: 409, Message: fmt.Sprintf("There is already an item with that name, with ID %v", existingID)}
 	}
-	_, err = db.Exec("INSERT INTO App.Item ([Name]) VALUES (@InName)", sql.Named("InName", item.Name))
-	return err
+	row = db.QueryRow("INSERT INTO App.Item ([Name]) OUTPUT Inserted.ItemId VALUES (@InName)", sql.Named("InName", item.Name))
+	var newID int
+	if err := row.Scan(&newID); err != nil {
+		return dbError(err)
+	}
+
+	return c.JSON(struct {
+		ID string `json:"id"`
+	}{strconv.Itoa(newID)})
 }
 
 func SearchItem(c *fiber.Ctx, db *sql.DB) error {

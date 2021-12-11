@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/michaelbironneau/shoppings/backend/api"
 	. "github.com/smartystreets/goconvey/convey"
+	"strings"
 	"testing"
 	"time"
 )
@@ -55,12 +56,12 @@ func TestItems(t *testing.T) {
 					Quantity: 1,
 				}
 				update := api.ListUpdate{Updates: []api.ListItem{item}}
-				res, err = makeTestRequest(app, "PATCH", fmt.Sprintf("/lists/:%s/updates", listResp.ID), token, update)
+				res, err = makeTestRequest(app, "PATCH", fmt.Sprintf("/lists/%s/updates", listResp.ID), token, update)
 				So(err, ShouldBeNil)
 
 				//1. Get all list items
 				var items api.ListUpdate
-				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/:%s/items", listResp.ID), token, nil)
+				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/%s/items", listResp.ID), token, nil)
 				So(err, ShouldBeNil)
 				So(unmarshalBody(res.Body, &items), ShouldBeNil)
 				So(items.Updates, ShouldHaveLength, 1)
@@ -70,8 +71,8 @@ func TestItems(t *testing.T) {
 
 				//2. Get updated since in past
 				var updates api.ListUpdate
-				tt := time.Now().Unix() - int64(time.Hour)
-				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/:%s/updates/%v", listResp.ID, tt), token, nil)
+				tt := time.Now().Unix() - int64(time.Hour/time.Second)
+				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/%s/updates/%v", listResp.ID, tt), token, nil)
 				So(err, ShouldBeNil)
 				So(unmarshalBody(res.Body, &updates), ShouldBeNil)
 				So(updates.Updates, ShouldHaveLength, 1)
@@ -89,12 +90,59 @@ func TestItems(t *testing.T) {
 
 				//4. Get updated since with time in future - expect no updates
 				tt = updates.UpdateTime + 1
-				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/:%s/updates/%v", listResp.ID, tt), token, nil)
+				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/%s/updates/%v", listResp.ID, tt), token, nil)
 				So(err, ShouldBeNil)
 				So(unmarshalBody(res.Body, &updates), ShouldBeNil)
 				So(updates.Updates, ShouldHaveLength, 0)
 
+				//5. Create Item with this name, check that our ListItem has been updated to match
+				ii := api.Item{Name: strings.ToLower(item.Name)} // try in a different case, it should still work
+				res, err = makeTestRequest(app, "POST", "/items", token, ii)
+				So(err, ShouldBeNil)
+				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/%s/items", listResp.ID), token, nil)
+				So(err, ShouldBeNil)
+				So(unmarshalBody(res.Body, &updates), ShouldBeNil)
+				So(updates.Updates, ShouldHaveLength, 1)
+				So(updates.Updates[0].ItemID, ShouldNotBeBlank)
+				So(updates.Updates[0].Name, ShouldEqual, item.Name)
+
+				//6. Add Item with new name
+				ii.Name = "New Item"
+				res, err = makeTestRequest(app, "POST", "/items", token, ii)
+				So(err, ShouldBeNil)
+				var newItemID struct {
+					ID string `json:"id"`
+				}
+				So(unmarshalBody(res.Body, &newItemID), ShouldBeNil)
+				item.Name = ii.Name
+				update = api.ListUpdate{Updates: []api.ListItem{item}}
+				res, err = makeTestRequest(app, "PATCH", fmt.Sprintf("/lists/%s/updates", listResp.ID), token, update)
+				So(err, ShouldBeNil)
+
+				//7. Receive new update
+				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/%s/items", listResp.ID), token, nil)
+				So(err, ShouldBeNil)
+				So(unmarshalBody(res.Body, &updates), ShouldBeNil)
+				So(updates.Updates, ShouldHaveLength, 2)
 			})
+		})
+	})
+}
+
+func TestStores(t *testing.T) {
+	Convey("Given a test app", t, func() {
+		app, token, err := SetupTestAPI()
+		So(err, ShouldBeNil)
+		Convey("It should list stores", func() {
+			res, err := makeTestRequest(app, "GET", "/stores", token, nil)
+			So(err, ShouldBeNil)
+			var stores []api.Store
+			So(unmarshalBody(res.Body, &stores), ShouldBeNil)
+			So(stores, ShouldHaveLength, 2)
+			So(stores[0].Name, ShouldNotBeBlank)
+			So(stores[1].Name, ShouldNotBeBlank)
+			So(stores[0].ID, ShouldNotBeBlank)
+			So(stores[1].ID, ShouldNotBeBlank)
 		})
 	})
 }
