@@ -9,7 +9,7 @@ import (
 )
 
 func GetStores(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func GetStores(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func AddItem(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -46,6 +46,7 @@ func AddItem(c *fiber.Ctx, db *sql.DB) error {
 	row := db.QueryRow("SELECT TOP 1 1 FROM App.Item WHERE [Name] LIKE @InName", sql.Named("InName", item.Name))
 	if err := row.Scan(&existingID); err == nil {
 		// existing item
+		log.Printf("Found existing item when trying to add item")
 		return &Error{Code: 409, Message: fmt.Sprintf("There is already an item with that name, with ID %v", existingID)}
 	}
 	_, err = db.Exec("INSERT INTO App.Item ([Name]) VALUES (@InName)", sql.Named("InName", item.Name))
@@ -53,7 +54,7 @@ func AddItem(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func SearchItem(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func SearchItem(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func CheckItem(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}

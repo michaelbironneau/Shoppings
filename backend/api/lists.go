@@ -29,6 +29,7 @@ func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 		itemID *int
 		err    error
 	)
+	log.Printf("Adding item %+v to list %v", item, listID)
 	// 1. If there's no ItemID, try to create one
 	if item.ItemID == "" {
 		if item.Name == "" {
@@ -76,7 +77,7 @@ func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 }
 
 func UpdateItems(c *fiber.Ctx, db *sql.DB) error {
-	principal, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	principal, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -98,7 +99,7 @@ func UpdateItems(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func GetItems(c *fiber.Ctx, db *sql.DB, since int) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -144,7 +145,7 @@ WHERE LI.ListId = @InListId AND ValidFrom > @InSince
 }
 
 func UpdateList(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -170,7 +171,7 @@ func UpdateList(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func InsertList(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -198,7 +199,7 @@ func InsertList(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func SetListArchived(c *fiber.Ctx, db *sql.DB, archived int) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -215,7 +216,7 @@ func SetListArchived(c *fiber.Ctx, db *sql.DB, archived int) error {
 }
 
 func GetLists(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}
@@ -224,9 +225,9 @@ func GetLists(c *fiber.Ctx, db *sql.DB) error {
 	CAST(L.ListId AS VARCHAR(255)) AS 'ID',
 	ISNULL(L.Name, '') As 'ListName',
 	ISNULL(S.Name, '') AS 'StoreName',
-	STRING_AGG(LL.Name, ', ') AS 'Summary'
+	ISNULL(STRING_AGG(LL.Name, ', '), '') AS 'Summary'
 FROM App.List L
-INNER JOIN App.Store S ON L.StoreId = S.StoreID
+LEFT JOIN App.Store S ON L.StoreId = S.StoreID
 OUTER APPLY (
 	SELECT TOP 3 I.Name 
 	FROM App.ListItem LI 
@@ -254,7 +255,7 @@ ORDER BY L.ListId
 }
 
 func GetList(c *fiber.Ctx, db *sql.DB) error {
-	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {
 		return err
 	}

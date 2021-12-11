@@ -7,6 +7,8 @@ import (
 	"log"
 )
 
+const TokenHeader = "X-Token"
+
 func GetToken(c *fiber.Ctx, db *sql.DB) error {
 	var req struct {
 		Username string `json:"username"`

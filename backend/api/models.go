@@ -12,7 +12,7 @@ type ListItem struct {
 	ItemID     string `json:"id"`
 	ListID     string `json:"listId"`
 	Name       string `json:"name"`
-	Quantity   string `json:"quantity"`
+	Quantity   int    `json:"quantity"`
 	Checked    bool   `json:"checked"`
 	StoreOrder int    `json:"storeOrder"`
 }

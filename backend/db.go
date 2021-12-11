@@ -29,7 +29,6 @@ func NewDB(server, username, password, database string, logLev LogLevel) (*sql.D
 	return db, nil
 }
 
-
 // https://github.com/denisenkom/go-mssqldb#the-connection-string-can-be-specified-in-one-of-three-formats
 func formatDBConnString(server, username, password, database string, logLev int) string {
 	mssqlQueryParams := url.Values{}
