@@ -60,6 +60,15 @@ func registerHandlers(app *fiber.App, db *sql.DB) {
 	})
 }
 
+func HandleError(ctx *fiber.Ctx, err error) error {
+	code := fiber.StatusInternalServerError
+	if e, ok := err.(*api.Error); ok {
+		code = e.Code
+	}
+	err = ctx.Status(code).JSON(err.(*api.Error))
+	return nil
+}
+
 func main() {
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig() // Find and read the config file
@@ -68,14 +77,7 @@ func main() {
 	}
 	app := fiber.New(fiber.Config{
 		// Override default error handler
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-			if e, ok := err.(*api.Error); ok {
-				code = e.Code
-			}
-			err = ctx.Status(code).JSON(err.(*api.Error))
-			return nil
-		},
+		ErrorHandler: HandleError,
 	})
 	var db *sql.DB
 	for {

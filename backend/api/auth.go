@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func GetToken(ctx *fiber.Ctx, db *sql.DB) error {
+func GetToken(c *fiber.Ctx, db *sql.DB) error {
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -18,7 +18,7 @@ func GetToken(ctx *fiber.Ctx, db *sql.DB) error {
 	row := db.QueryRow("SELECT [Security].[udf_GetToken] (@InUsername, @InPassword)", sql.Named("InUsername", req.Username), sql.Named("InPassword", req.Password))
 	var token sql.NullString
 	if err := row.Scan(&token); err != nil {
-		log.Printf("Error retrieving token: %v\n")
+		log.Printf("Error retrieving token: %v\n", err)
 		return Err401
 	}
 	if !token.Valid {

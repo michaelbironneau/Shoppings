@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	_ "github.com/denisenkom/go-mssqldb"
 	"net/url"
 	"time"
 )
@@ -28,29 +29,6 @@ func NewDB(server, username, password, database string, logLev LogLevel) (*sql.D
 	return db, nil
 }
 
-func newTestDB() (*sql.DB, error) {
-	return sql.Open("sqlserver", "database=opdb;log=16")
-}
-
-func resetTestDB(db *sql.DB) error {
-	_, err := db.Exec(`USE OpDb
-		GO
-		TRUNCATE TABLE Security.Principal 
-		GO
-		EXECUTE [Security].[uspAddPrincipal] 
-   		'TestUser'
-  		,'TestPass'
-		GO
-		DELETE FROM App.[List]
-		GO
-		TRUNCATE TABLE App.StoreOrder 
-		GO
-		DELETE FROM App.Store 
-		GO
-		DELETE FROM App.Item 
-		GO `)
-	return err
-}
 
 // https://github.com/denisenkom/go-mssqldb#the-connection-string-can-be-specified-in-one-of-three-formats
 func formatDBConnString(server, username, password, database string, logLev int) string {
