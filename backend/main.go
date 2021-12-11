@@ -34,16 +34,17 @@ func registerHandlers(app *fiber.App, db *sql.DB) {
 		return api.UpdateList(c, db)
 	})
 	app.Get("/lists/:id/updates/:since", func(c *fiber.Ctx) error {
-		return nil
+		since, err := c.ParamsInt("since")
+		if err != nil {
+			return &api.Error{Code: 400, Message: "`since` must be integer"}
+		}
+		return api.GetItems(c, db, since)
 	})
-	app.Post("/lists/:id/updates", func(c *fiber.Ctx) error {
-		return nil
+	app.Patch("/lists/:id/updates", func(c *fiber.Ctx) error {
+		return api.UpdateItems(c, db)
 	})
 	app.Get("/lists/:id/items", func(c *fiber.Ctx) error {
-		return nil
-	})
-	app.Post("/lists/:id/items", func(c *fiber.Ctx) error {
-		return nil
+		return api.GetItems(c, db, 0)
 	})
 	app.Post("/lists/:id/items/:item/complete", func(c *fiber.Ctx) error {
 		return api.CheckItem(c, db)
@@ -52,7 +53,10 @@ func registerHandlers(app *fiber.App, db *sql.DB) {
 		return api.SearchItem(c, db)
 	})
 	app.Post("/items", func(c *fiber.Ctx) error {
-		return nil
+		return api.AddItem(c, db)
+	})
+	app.Get("/stores", func(c *fiber.Ctx) error {
+		return api.GetStores(c, db)
 	})
 }
 

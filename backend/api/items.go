@@ -2,8 +2,55 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"log"
 )
+
+func GetStores(c *fiber.Ctx, db *sql.DB) error {
+	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	if err != nil {
+		return err
+	}
+	var stores []Store
+	rows, err := db.Query("SELECT CAST(StoreID AS VARCHAR(255)), [Name] FROM App.Store")
+	if err != nil {
+		return dbError(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var store Store
+		if err := rows.Scan(&store.ID, &store.Name); err != nil {
+			return dbError(err)
+		}
+		stores = append(stores, store)
+	}
+	return c.JSON(stores)
+}
+
+func AddItem(c *fiber.Ctx, db *sql.DB) error {
+	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	if err != nil {
+		return err
+	}
+	var item Item
+	if err := json.Unmarshal(c.Body(), &item); err != nil {
+		log.Printf("Error unmarshalling body: %v", err)
+		return &Error{Code: 400, Message: "Invalid request body, expecting a JSON-encoded Item"}
+	}
+	if item.Name == "" {
+		return &Error{Code: 400, Message: "Empty item name"}
+	}
+	var existingID int
+	row := db.QueryRow("SELECT TOP 1 1 FROM App.Item WHERE [Name] LIKE @InName", sql.Named("InName", item.Name))
+	if err := row.Scan(&existingID); err == nil {
+		// existing item
+		return &Error{Code: 409, Message: fmt.Sprintf("There is already an item with that name, with ID %v", existingID)}
+	}
+	_, err = db.Exec("INSERT INTO App.Item ([Name]) VALUES (@InName)", sql.Named("InName", item.Name))
+	return err
+}
 
 func SearchItem(c *fiber.Ctx, db *sql.DB) error {
 	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))

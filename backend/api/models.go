@@ -18,7 +18,7 @@ type ListItem struct {
 }
 
 type ListUpdate struct {
-	UpdateTime int        `json:"updatedAt"`
+	UpdateTime int64      `json:"updatedAt"`
 	Updates    []ListItem `json:"updates"`
 }
 
@@ -28,6 +28,12 @@ type Store struct {
 }
 
 type Item struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID          string       `json:"id"`
+	Name        string       `json:"name"`
+	StoreOrders []StoreOrder `json:"storeOrders"`
+}
+
+type StoreOrder struct {
+	StoreName string `json:"store"`
+	Order     int    `json:"order"`
 }

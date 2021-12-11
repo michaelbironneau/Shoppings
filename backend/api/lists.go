@@ -5,7 +5,143 @@ import (
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"log"
+	"strconv"
+	"time"
 )
+
+const mergeSQL = `
+MERGE App.ListItem AS TARGET
+USING (VALUES (@InListId,
+			   @InItemId,
+			   @inName, 
+			   @InQuantity,
+			   @InUsername)) AS up(ListId, ItemId, [Name], Quantity, Username)
+ON TARGET.ListId = up.ListId AND (up.ItemId = TARGET.ItemId OR up.[Name] = TARGET.[Name])
+WHEN MATCHED THEN
+	UPDATE SET TARGET.Quantity = up.Quantity, TARGET.Username = up.Username
+WHEN NOT MATCHED THEN 
+	INSERT (TARGET.[ListId], TARGET.[ItemId], TARGET.[Name], TARGET.Quantity, TARGET.Username)
+		VALUES (up.ListId, up.ItemId, up.[Name], up.Quantity, up.Username);`
+
+func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
+	// update or create item
+	var (
+		itemID *int
+		err    error
+	)
+	// 1. If there's no ItemID, try to create one
+	if item.ItemID == "" {
+		if item.Name == "" {
+			return &Error{Code: 400, Message: "Item ID and Name cannot both be blank"}
+		}
+		// try to convert the "custom" item over to an App.Item by looking up in App.Item
+		// see if we have any matching items in App.Item
+		row := db.QueryRow("SELECT TOP 1 CAST(ItemId AS VARCHAR(255)) FROM App.Item WHERE [Name] LIKE @InItemName", item.Name)
+		var newItemID string
+		if err := row.Scan(&newItemID); err != nil && err != sql.ErrNoRows {
+			return dbError(err)
+		} else if err == nil {
+			itemIDConv, err := strconv.Atoi(newItemID)
+			if err != nil {
+				// should never get reached
+				log.Printf("Got non-numeric ID from DB: %s", newItemID)
+				return Err500
+			}
+			itemID = &itemIDConv
+			// update the list with the new Item ID, if it's there, to avoid inconsistencies
+			if _, err := db.Exec("UPDATE App.ListItem SET ItemId = @InItemId WHERE ListId = @InListId AND [Name] LIKE @InName",
+				sql.Named("InItemId", itemID),
+				sql.Named("InListId", listID),
+				sql.Named("InName", item.Name)); err != nil {
+				return dbError(err)
+			}
+		} else {
+			//fine if we don't have a match, ignore
+		}
+	} else {
+		itemIDConv, err := strconv.Atoi(item.ItemID)
+		if err != nil {
+			return &Error{Code: 400, Message: "The item ID should be a number"}
+		}
+		itemID = &itemIDConv
+	}
+	//2. We made sure the item is a fully-fledged App.Item, if possible, and now we can just execute a merge statement
+	_, err = db.Exec(mergeSQL,
+		sql.Named("InListId", listID),
+		sql.Named("InItemId", itemID),
+		sql.Named("InName", item.Name),
+		sql.Named("InQuantity", item.Quantity),
+		sql.Named("InUsername", principal))
+	return dbError(err)
+}
+
+func UpdateItems(c *fiber.Ctx, db *sql.DB) error {
+	principal, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	if err != nil {
+		return err
+	}
+	listID, err := c.ParamsInt("id")
+	if err != nil {
+		return &Error{Code: 400, Message: "List ID should be an integer"}
+	}
+	var items ListUpdate
+	if err := json.Unmarshal(c.Body(), &items); err != nil {
+		log.Printf("Error unmarshalling update body: %v", err)
+		return &Error{Code: 400, Message: "Invalid body: should have `updates` with list of updates"}
+	}
+	for i := range items.Updates {
+		if err := updateItem(db, listID, items.Updates[i], principal); err != nil {
+			return Err500
+		}
+	}
+	return nil
+}
+
+func GetItems(c *fiber.Ctx, db *sql.DB, since int) error {
+	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))
+	if err != nil {
+		return err
+	}
+	listID, err := c.ParamsInt("id")
+	if err != nil {
+		return &Error{Code: 400, Message: "List ID should be an integer"}
+	}
+	s := `
+SELECT 
+	LI.ListId, 
+	LI.ItemId, 
+	ISNULL(ISNULL(I.Name, LI.Name),'') AS [Name], 
+	Quantity, 
+	Checked, 
+	ISNULL(SO.[Order], 0) AS [StoreOrder],
+	ValidFrom AS [LastModified]
+FROM App.ListItem LI
+INNER JOIN App.List L ON L.ListId = LI.ListId
+LEFT JOIN App.Item I ON I.ItemId = LI.ItemID
+LEFT JOIN App.StoreOrder SO ON SO.ItemId = I.ItemId AND SO.StoreId = L.StoreId
+WHERE LI.ListId = @InListId AND ValidFrom > @InSince
+	`
+	var ret ListUpdate
+	rows, err := db.Query(s, sql.Named("InListId", listID), sql.Named("InSince", time.Unix(int64(since), 0)))
+	if err != nil {
+		return dbError(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			li        ListItem
+			updatedAt time.Time
+		)
+		if err := rows.Scan(&li.ListID, &li.ItemID, &li.Name, &li.Quantity, &li.Checked, &li.StoreOrder, &updatedAt); err != nil {
+			return dbError(err)
+		}
+		ret.Updates = append(ret.Updates, li)
+		if updatedAt.Unix() > ret.UpdateTime {
+			ret.UpdateTime = updatedAt.Unix()
+		}
+	}
+	return c.JSON(ret)
+}
 
 func UpdateList(c *fiber.Ctx, db *sql.DB) error {
 	_, err := getPrincipal(db, string(c.Request().Header.Peek("X-Token")))

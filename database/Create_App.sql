@@ -40,6 +40,10 @@ CREATE TABLE App.ListItem
 ) WITH(SYSTEM_VERSIONING = ON(HISTORY_TABLE=App.ListItemHistory));
 CREATE INDEX ix_ListItem_List on App.ListItem (ListId);
 GO
+CREATE UNIQUE INDEX uq_ListItem_Items ON App.ListItem(ListId, ItemId) WHERE ItemID IS NOT NULL;
+GO
+CREATE UNIQUE INDEX uq_ListItem_ItemName ON App.ListItem(ListId, [Name]) WHERE [Name] IS NOT NULL;
+GO
 CREATE TABLE App.StoreOrder
 (
     StoreOrderID BIGINT NOT NULL IDENTITY(1,1) PRIMARY KEY,
