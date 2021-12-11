@@ -129,6 +129,36 @@ func TestItems(t *testing.T) {
 	})
 }
 
+func TestSearch(t *testing.T) {
+	Convey("Given a test app", t, func() {
+		app, token, err := SetupTestAPI()
+		So(err, ShouldBeNil)
+		Convey("It should return search results", func() {
+			i := api.Item{Name: "Eggs"}
+			i2 := api.Item{Name: "Onion"}
+			i3 := api.Item{Name: "Onion Tart"}
+			//1. Seed some items
+			_, err = makeTestRequest(app, "POST", "/items", token, i)
+			So(err, ShouldBeNil)
+			_, err = makeTestRequest(app, "POST", "/items", token, i2)
+			So(err, ShouldBeNil)
+			_, err = makeTestRequest(app, "POST", "/items", token, i3)
+			So(err, ShouldBeNil)
+
+			//2. search for "onion"
+			res, err := makeTestRequest(app, "GET", "/search-items/onion", token, nil)
+			var items []api.Item
+			So(err, ShouldBeNil)
+			So(unmarshalBody(res.Body, &items), ShouldBeNil)
+			So(items, ShouldHaveLength, 2)
+			So(items[0].ID, ShouldNotBeBlank)
+			So(items[1].ID, ShouldNotBeBlank)
+			So(strings.Contains(strings.ToLower(items[0].Name), "onion"), ShouldBeTrue)
+			So(strings.Contains(strings.ToLower(items[1].Name), "onion"), ShouldBeTrue)
+		})
+	})
+}
+
 func TestStores(t *testing.T) {
 	Convey("Given a test app", t, func() {
 		app, token, err := SetupTestAPI()

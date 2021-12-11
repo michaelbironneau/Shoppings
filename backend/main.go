@@ -50,7 +50,7 @@ func registerHandlers(app *fiber.App, db *sql.DB) {
 	app.Post("/lists/:id/items/:item/complete", func(c *fiber.Ctx) error {
 		return api.CheckItem(c, db)
 	})
-	app.Get("/item-search/:needle", func(c *fiber.Ctx) error {
+	app.Get("/search-items/:needle", func(c *fiber.Ctx) error {
 		return api.SearchItem(c, db)
 	})
 	app.Post("/items", func(c *fiber.Ctx) error {
