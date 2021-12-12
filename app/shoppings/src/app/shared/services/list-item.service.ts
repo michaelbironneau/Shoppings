@@ -132,6 +132,18 @@ export class ListItemService extends BaseService {
     console.debug(`Checked item ${item.name} on list ${listID}`);
     items[existingItem].checked = true;
     localStorage.setItem(`list-${listID}`, JSON.stringify(items));
+    if (!environment.api) {
+      return of(true);
+    }
+    if (environment.api && this.haveNetworkConnectivity) {
+      let update: ListUpdate;
+      update.updates = [items[existingItem]];
+      return this.http
+        .patch(`${environment.api}/lists/${listID}/updates`, update)
+        .pipe(map(() => true));
+    }
+    // no network connectivity - enqueue
+    this.enqueueUpdate(items[existingItem]);
     return of(true);
   }
 
@@ -146,6 +158,38 @@ export class ListItemService extends BaseService {
       return;
     }
     items[itemIndex] = update;
+  }
+
+  syncListItems(listID: string): Observable<ListItem[]> {
+    // sync locally and return any new items from the API
+    if (!environment.api || !this.haveNetworkConnectivity) {
+      return of([]);
+    }
+    const storageKey = `list-${listID}`;
+    const updateKey = `list-${listID}-updated`;
+    this.http
+      .get(`${environment.api}/lists/${listID}/updates/${updateKey}`)
+      .pipe(
+        map((update: ListUpdate) => {
+          if (update.updatedAt === 0) {
+            return [];
+          }
+          const newUpdateValue = update.updatedAt.toString();
+          localStorage.setItem(updateKey, newUpdateValue);
+          const listStr = localStorage.getItem(storageKey);
+          if (listStr === null) {
+            localStorage.setItem(storageKey, JSON.stringify(update.updates)); // new list, or no items written yet
+            return update.updates;
+          }
+          const listItems: ListItem[] = JSON.parse(listStr);
+          update.updates.forEach((item: ListItem) => {
+            // eslint-disable-next-line no-underscore-dangle
+            this._updateItem(listItems, item);
+          });
+          localStorage.setItem(storageKey, JSON.stringify(listItems));
+          return update.updates;
+        })
+      );
   }
 
   // apply update to the list and return if successful

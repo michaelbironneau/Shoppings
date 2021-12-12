@@ -4,21 +4,40 @@ import { BaseService } from './base.service';
 import { List } from '../models/list';
 import { map } from 'rxjs/operators';
 import { seedLists } from '../seed-data/lists';
-
-// run once
-localStorage.setItem('lists', JSON.stringify(seedLists));
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ListService extends BaseService {
+  trySyncLists(): Observable<boolean> {
+    if (!environment.api) {
+      localStorage.setItem('lists', JSON.stringify(seedLists));
+      return of(true);
+    }
+    if (!this.haveNetworkConnectivity) {
+      return of(false);
+    }
+    this.http.get<List[]>(`${environment.api}/lists`).pipe(
+      map((lists: List[]) => {
+        localStorage.setItem('lists', JSON.stringify(lists));
+        return true;
+      })
+    );
+  }
+
   //  get all lists
   getAll(): Observable<List[]> {
-    const listStr = localStorage.getItem('lists');
-    if (listStr == null) {
-      return of(null);
-    }
-    return of(JSON.parse(listStr));
+    return this.trySyncLists().pipe(
+      map(() => {
+        const listStr = localStorage.getItem('lists');
+        if (listStr == null) {
+          return [];
+        }
+        const lists: List[] = JSON.parse(listStr);
+        return lists;
+      })
+    );
   }
 
   // add list, returning ID
