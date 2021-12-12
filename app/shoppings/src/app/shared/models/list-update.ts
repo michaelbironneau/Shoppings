@@ -1,5 +1,6 @@
+import { ListItem } from './list-item';
+
 export interface ListUpdate {
-  name: string;
-  quantityDiff: number;
-  user?: string;
+  updatedAt: number;
+  updates: ListItem[];
 }

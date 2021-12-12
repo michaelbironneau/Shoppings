@@ -1,18 +1,29 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, OnDestroy } from '@angular/core';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Network } from '@capacitor/network';
 import { from } from 'rxjs';
+import { PluginListenerHandle } from '@capacitor/core';
 
 @Injectable({
   providedIn: 'root',
 })
-export class BaseService {
-  constructor(protected http: HttpClient) {}
+export class BaseService implements OnDestroy {
+  haveNetworkConnectivity = false;
+  networkListener: PluginListenerHandle;
+  constructor(protected http: HttpClient) {
+    this.networkListener = Network.addListener(
+      'networkStatusChange',
+      (status) => {
+        this.haveNetworkConnectivity = status.connected;
+      }
+    );
+  }
 
-  haveInternet(): Observable<boolean> {
-    const status = from(Network.getStatus());
-    return status.pipe(map((s) => s.connected));
+  ngOnDestroy() {
+    if (this.networkListener) {
+      this.networkListener.remove();
+    }
   }
 }

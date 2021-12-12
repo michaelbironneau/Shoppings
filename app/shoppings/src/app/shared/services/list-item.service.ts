@@ -2,37 +2,107 @@
 import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { BaseService } from './base.service';
-import { List } from '../models/list';
 import { map } from 'rxjs/operators';
 import { seedListItemsA, seedListItemsB } from '../seed-data/list-items';
 import { ListItem } from '../models/list-item';
 import { ListUpdate } from '../models/list-update';
 import { autocompleteItems } from '../seed-data/autocomplete';
-
-// run once
-localStorage.setItem('list-aaaa', JSON.stringify(seedListItemsA));
-localStorage.setItem('list-asdf', JSON.stringify(seedListItemsB));
+import { environment } from '../../../environments/environment';
+import { Item } from '../models/item';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ListItemService extends BaseService {
+  trySyncList(listID: string): Observable<boolean> {
+    if (!environment.api) {
+      localStorage.setItem('list-aaaa', JSON.stringify(seedListItemsA));
+      localStorage.setItem('list-asdf', JSON.stringify(seedListItemsB));
+      return of(true); // trivially "sync" list from demo data
+    }
+    if (!this.haveNetworkConnectivity) {
+      return of(false); // can't sync list if we don't have a network
+    }
+    this.http.get<ListUpdate>(`${environment.api}/lists/${listID}/items`).pipe(
+      map((items: ListUpdate) => {
+        localStorage.setItem(`list-${listID}`, JSON.stringify(items.updates));
+        localStorage.setItem(
+          `list-${listID}-updated`,
+          items.updatedAt.toString()
+        );
+        return true;
+      })
+    );
+  }
+
+  trySyncAutocompleteList(): Observable<boolean> {
+    if (!environment.api) {
+      localStorage.setItem('autocomplete', JSON.stringify(autocompleteItems));
+      return of(true);
+    }
+    if (!this.haveNetworkConnectivity) {
+      return of(false);
+    }
+    this.http.get<Item[]>(`${environment.api}/items`).pipe(
+      map((items: Item[]) => {
+        localStorage.setItem('autocomplete', JSON.stringify(items));
+        return true;
+      })
+    );
+  }
+
   //  get all list items
   getAll(listID: string): Observable<ListItem[]> {
-    const listStr = localStorage.getItem(`list-${listID}`);
-    if (listStr == null) {
-      return of([]);
-    }
-    return of(JSON.parse(listStr));
+    return this.trySyncList(listID).pipe(
+      map((status: boolean) => {
+        if (!status) {
+          console.warn(`Failed to sync list ${listID}`);
+        }
+        const listStr = localStorage.getItem(`list-${listID}`);
+        if (listStr == null) {
+          return [];
+        }
+        return JSON.parse(listStr);
+      })
+    );
+  }
+
+  searchAutocompleteAPI(needle: string): Observable<ListItem[]> {
+    return this.http
+      .get<Item[]>(`${environment.api}/item-search/${needle}`)
+      .pipe(
+        map((items: Item[]) =>
+          items.map((item: Item) => ({
+            name: item.name,
+            id: item.id,
+            checked: false,
+            listId: null,
+            quantity: 1,
+          }))
+        )
+      );
   }
 
   searchAutocomplete(needle: string): Observable<ListItem[]> {
+    if (environment.api && this.haveNetworkConnectivity) {
+      // prefer live search if available
+      return this.searchAutocompleteAPI(needle);
+    }
+    let searchSpace: Item[] = [];
+
+    const storedResults = localStorage.getItem('autocomplete');
+    if (storedResults) {
+      searchSpace = JSON.parse(storedResults);
+    }
+
     console.debug(`Searching for ${needle}`);
-    const hits = autocompleteItems.filter(
-      (item) => item.toLowerCase().indexOf(needle.toLowerCase()) !== -1
+    const hits = searchSpace.filter(
+      (item: Item) =>
+        item.name.toLowerCase().indexOf(needle.toLowerCase()) !== -1
     );
-    const itemsToReturn = hits.map((hit: string) => ({
-      name: hit,
+    const itemsToReturn = hits.map((hit: Item) => ({
+      name: hit.name,
+      id: hit.id,
       checked: false,
       listId: null,
       quantity: 1,
@@ -65,62 +135,37 @@ export class ListItemService extends BaseService {
     return of(true);
   }
 
+  _updateItem(items: ListItem[], update: ListItem) {
+    const itemIndex = items.findIndex(
+      (item) =>
+        (update.name && item.name && update.name === item.name) ||
+        (update.id && update.id && update.id === item.id)
+    );
+    if (itemIndex === -1) {
+      items.push(update);
+      return;
+    }
+    items[itemIndex] = update;
+  }
+
   // apply update to the list and return if successful
   applyUpdate(listID: string, update: ListUpdate): Observable<boolean> {
-    const listStr = localStorage.getItem(`list-${listID}`);
-    if (listStr == null && update.quantityDiff <= 0) {
-      console.warn(
-        `Tried to remove item ${update.name} from unknown list ${listID}`
-      );
-      return of(false);
-    }
-    if (listStr == null && update.quantityDiff > 0) {
-      console.debug(`Creating new item list for ${listID}`);
-      console.debug(`Adding ${update.quantityDiff} of ${update.name}`);
-      const newItems: ListItem[] = [
-        {
-          listId: listID,
-          name: update.name,
-          quantity: update.quantityDiff,
-          checked: false,
-        },
-      ];
-      localStorage.setItem(`list-${listID}`, JSON.stringify(newItems));
-      return of(true);
-    }
-    const items: ListItem[] = JSON.parse(listStr);
-    const existingItem = items.findIndex((item) => item.name === update.name);
-
-    if (existingItem === -1 && update.quantityDiff > 0) {
-      console.debug(`Adding new item to list ${listID}: ${update.name}`);
-      items.push({
-        listId: listID,
-        name: update.name,
-        quantity: update.quantityDiff,
-        checked: false,
-      });
-      localStorage.setItem(`list-${listID}`, JSON.stringify(items));
+    const storageKey = `list-${listID}`;
+    const updateKey = `list-${listID}-updated`;
+    const listStr = localStorage.getItem(storageKey);
+    if (!listStr) {
+      // we should do a full update if we have network connectivity,
+      // but for now let's just update based on these items.
+      console.warn(`Updating unknown list ${listID}`);
+      localStorage.setItem(storageKey, JSON.stringify(update.updates));
+      localStorage.setItem(updateKey, update.updatedAt.toString());
       return of(true);
     }
 
-    if (existingItem === -1 && update.quantityDiff <= 0) {
-      console.debug(
-        `Update for item ${update.name} on list ${listID} had no effect, with quantity diff ${update.quantityDiff}`
-      );
-      return of(true);
-    }
-
-    items[existingItem].quantity += update.quantityDiff;
-    console.debug(
-      `Updated item ${update.name} on list ${listID} to quantity ${items[existingItem].quantity}`
-    );
-
-    if (items[existingItem].quantity <= 0) {
-      console.debug(`Removed item ${update.name} on list ${listID}`);
-      items.splice(existingItem, 1);
-    }
-    localStorage.setItem(`list-${listID}`, JSON.stringify(items));
-
-    return of(true);
+    const listItems: ListItem[] = JSON.parse(listStr);
+    update.updates.forEach((item: ListItem) => {
+      // eslint-disable-next-line no-underscore-dangle
+      this._updateItem(listItems, item);
+    });
   }
 }

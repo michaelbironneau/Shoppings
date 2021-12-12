@@ -68,7 +68,15 @@
             "ci": {
               "progress": false
             }
-          }
+          },
+          "test": {
+            "fileReplacements": [
+              {
+                "replace": "src/environments/environment.ts",
+                "with": "src/environments/environment.test.ts"
+              }
+            ]
+        }
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
