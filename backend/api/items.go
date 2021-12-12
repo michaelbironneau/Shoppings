@@ -30,6 +30,28 @@ func GetStores(c *fiber.Ctx, db *sql.DB) error {
 	return c.JSON(stores)
 }
 
+func GetAllItems(c *fiber.Ctx, db *sql.DB) error {
+	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
+	if err != nil {
+		return err
+	}
+
+	rows, err := db.Query(`SELECT CAST(ItemId AS VARCHAR(255)), [Name] FROM App.Item ORDER BY [Name]`)
+	if err != nil {
+		return dbError(err)
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name); err != nil {
+			return dbError(err)
+		}
+		items = append(items, item)
+	}
+	return c.JSON(items)
+}
+
 func AddItem(c *fiber.Ctx, db *sql.DB) error {
 	_, err := getPrincipal(db, string(c.Request().Header.Peek(TokenHeader)))
 	if err != nil {

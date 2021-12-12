@@ -56,6 +56,9 @@ func registerHandlers(app *fiber.App, db *sql.DB) {
 	app.Post("/items", func(c *fiber.Ctx) error {
 		return api.AddItem(c, db)
 	})
+	app.Get("/items", func(c *fiber.Ctx) error {
+		return api.GetAllItems(c, db)
+	})
 	app.Get("/stores", func(c *fiber.Ctx) error {
 		return api.GetStores(c, db)
 	})
