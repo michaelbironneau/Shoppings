@@ -5,3 +5,7 @@ export interface List {
   summary?: string;
   archived: boolean;
 }
+
+export interface NewResource {
+  id: string;
+}
