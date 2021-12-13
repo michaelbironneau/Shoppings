@@ -9,11 +9,17 @@ import { ListUpdate } from '../models/list-update';
 import { autocompleteItems } from '../seed-data/autocomplete';
 import { environment } from '../../../environments/environment';
 import { Item } from '../models/item';
+import { SyncService } from './sync.service';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ListItemService extends BaseService {
+  constructor(private sync: SyncService, private http: HttpClient) {
+    super();
+  }
+
   trySyncList(listID: string): Observable<boolean> {
     if (!environment.api) {
       localStorage.setItem('list-aaaa', JSON.stringify(seedListItemsA));
@@ -143,7 +149,7 @@ export class ListItemService extends BaseService {
         .pipe(map(() => true));
     }
     // no network connectivity - enqueue
-    this.enqueueUpdate(items[existingItem]);
+    this.sync.enqueueUpdate(items[existingItem]);
     return of(true);
   }
 
@@ -203,7 +209,6 @@ export class ListItemService extends BaseService {
       console.warn(`Updating unknown list ${listID}`);
       localStorage.setItem(storageKey, JSON.stringify(update.updates));
       localStorage.setItem(updateKey, update.updatedAt.toString());
-      return of(true);
     }
 
     const listItems: ListItem[] = JSON.parse(listStr);
@@ -211,5 +216,15 @@ export class ListItemService extends BaseService {
       // eslint-disable-next-line no-underscore-dangle
       this._updateItem(listItems, item);
     });
+    if (environment.api && this.haveNetworkConnectivity) {
+      return this.http
+        .patch(`${environment.api}/lists/${listID}/updates`, update)
+        .pipe(map(() => true));
+    } else if (environment.api && !this.haveNetworkConnectivity) {
+      update.updates.forEach((item: ListItem) => {
+        this.sync.enqueueUpdate(item);
+      });
+    }
+    return of(true);
   }
 }
