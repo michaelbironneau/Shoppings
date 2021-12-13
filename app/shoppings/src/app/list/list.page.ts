@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { ListItem } from '../shared/models/list-item';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { ListItemService } from '../shared/services/list-item.service';
+import { Item } from '../shared/models/item';
 
 @Component({
   selector: 'app-list',
@@ -41,8 +42,14 @@ export class ListPage implements OnInit {
   onAddCustom() {
     this.listItemService
       .applyUpdate(this.listID, {
-        name: this.searchString,
-        quantityDiff: 1,
+        updates: [
+          {
+            listId: this.listID,
+            name: this.searchString,
+            quantity: 1,
+            checked: false,
+          },
+        ],
       })
       .subscribe(() => {
         this.refresh();
@@ -52,8 +59,15 @@ export class ListPage implements OnInit {
   onAdd(result) {
     this.listItemService
       .applyUpdate(this.listID, {
-        name: result.name,
-        quantityDiff: 1,
+        updates: [
+          {
+            listId: this.listID,
+            id: result.id,
+            name: result.name,
+            quantity: 1,
+            checked: false,
+          },
+        ],
       })
       .subscribe(() => {
         this.refresh();
@@ -81,10 +95,11 @@ export class ListPage implements OnInit {
   }
 
   onApplyDiff(item: ListItem, quantityDiff: number) {
+    const newItem = { ...item };
+    newItem.quantity += quantityDiff;
     this.listItemService
       .applyUpdate(this.listID, {
-        name: item.name,
-        quantityDiff: quantityDiff,
+        updates: [newItem],
       })
       .subscribe(() => {
         this.refresh();

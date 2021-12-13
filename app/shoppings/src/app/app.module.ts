@@ -8,6 +8,10 @@ import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { ListService } from './shared/services/list.service';
 import { TokenInterceptor } from './shared/token-interceptor';
+import { ListItemService } from './shared/services/list-item.service';
+import { AuthGuardService } from './shared/services/auth-guard.service';
+import { AuthService } from './shared/services/auth.service';
+import { SyncService } from './shared/services/sync.service';
 
 @NgModule({
   declarations: [AppComponent],
@@ -20,6 +24,10 @@ import { TokenInterceptor } from './shared/token-interceptor';
   ],
   providers: [
     ListService,
+    ListItemService,
+    AuthService,
+    AuthGuardService,
+    SyncService,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     { provide: HTTP_INTERCEPTORS, useClass: TokenInterceptor },
   ],

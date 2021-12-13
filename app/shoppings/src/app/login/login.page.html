@@ -21,5 +21,12 @@
         >
       </ion-col>
     </ion-row>
+    <ion-row *ngIf="failedLogin">
+      <ion-col>
+        <p color="danger">
+          Failed to authenticate: Please check username/password.
+        </p>
+      </ion-col>
+    </ion-row>
   </ion-grid>
 </ion-content>
