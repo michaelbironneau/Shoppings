@@ -5,7 +5,6 @@ import { List, NewResource } from '../models/list';
 import { map } from 'rxjs/operators';
 import { seedLists } from '../seed-data/lists';
 import { environment } from 'src/environments/environment';
-import { env } from 'process';
 import { HttpClient } from '@angular/common/http';
 
 @Injectable({

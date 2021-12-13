@@ -12,6 +12,11 @@ import { Item } from '../models/item';
 import { SyncService } from './sync.service';
 import { HttpClient } from '@angular/common/http';
 
+if (!environment.api) {
+  localStorage.setItem('list-aaaa', JSON.stringify(seedListItemsA));
+  localStorage.setItem('list-asdf', JSON.stringify(seedListItemsB));
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -22,11 +27,9 @@ export class ListItemService extends BaseService {
 
   trySyncList(listID: string): Observable<boolean> {
     if (!environment.api) {
-      localStorage.setItem('list-aaaa', JSON.stringify(seedListItemsA));
-      localStorage.setItem('list-asdf', JSON.stringify(seedListItemsB));
-      return of(true); // trivially "sync" list from demo data
+      return of(true);
     }
-    if (!this.haveNetworkConnectivity) {
+    if (environment.api && !this.haveNetworkConnectivity) {
       return of(false); // can't sync list if we don't have a network
     }
     this.http.get<ListUpdate>(`${environment.api}/lists/${listID}/items`).pipe(
@@ -211,11 +214,13 @@ export class ListItemService extends BaseService {
       localStorage.setItem(updateKey, update.updatedAt.toString());
     }
 
-    const listItems: ListItem[] = JSON.parse(listStr);
+    let listItems: ListItem[] = JSON.parse(listStr);
     update.updates.forEach((item: ListItem) => {
       // eslint-disable-next-line no-underscore-dangle
       this._updateItem(listItems, item);
     });
+    listItems = listItems.filter((item: ListItem) => item.quantity > 0); // delete if quantity == 0
+    localStorage.setItem(storageKey, JSON.stringify(listItems));
     if (environment.api && this.haveNetworkConnectivity) {
       return this.http
         .patch(`${environment.api}/lists/${listID}/updates`, update)

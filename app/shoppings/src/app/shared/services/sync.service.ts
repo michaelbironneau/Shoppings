@@ -13,9 +13,8 @@ import { BehaviorSubject, forkJoin } from 'rxjs';
 export class SyncService implements OnDestroy {
   haveNetworkConnectivity = false;
   networkListener: PluginListenerHandle;
-  syncing: BehaviorSubject<boolean>;
+  syncing: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   constructor(protected http: HttpClient) {
-    this.syncing.next(false);
     this.networkListener = Network.addListener(
       'networkStatusChange',
       (status) => {

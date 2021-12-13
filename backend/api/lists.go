@@ -119,7 +119,7 @@ FROM App.ListItem LI
 INNER JOIN App.List L ON L.ListId = LI.ListId
 LEFT JOIN App.Item I ON I.ItemId = LI.ItemID
 LEFT JOIN App.StoreOrder SO ON SO.ItemId = I.ItemId AND SO.StoreId = L.StoreId
-WHERE LI.ListId = @InListId AND ValidFrom > @InSince
+WHERE LI.ListId = @InListId AND ValidFrom > @InSince AND LI.Quantity > 0
 	`
 	var ret ListUpdate
 	rows, err := db.Query(s, sql.Named("InListId", listID), sql.Named("InSince", time.Unix(int64(since), 0)))

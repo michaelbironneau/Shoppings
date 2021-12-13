@@ -24,6 +24,7 @@ export class ListPage implements OnInit {
   ngOnInit() {
     this.route.params.subscribe((params: Params) => {
       this.listID = params.id;
+      console.log(`Editing: ${this.listID}`);
       this.refresh();
     });
   }
@@ -86,7 +87,6 @@ export class ListPage implements OnInit {
       .searchAutocomplete(e.target.value)
       .subscribe((results) => {
         this.searchResults = results;
-        console.log(this.searchResults);
       });
   }
 
