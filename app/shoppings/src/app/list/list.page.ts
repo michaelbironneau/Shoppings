@@ -1,20 +1,21 @@
 /* eslint-disable object-shorthand */
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ListItem } from '../shared/models/list-item';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { ListItemService } from '../shared/services/list-item.service';
-import { Item } from '../shared/models/item';
+import { Subscription, timer } from 'rxjs';
 
 @Component({
   selector: 'app-list',
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
 })
-export class ListPage implements OnInit {
+export class ListPage implements OnInit, OnDestroy {
   listID: string;
   items: ListItem[] = [];
   searchString = null;
   searchResults: ListItem[] = [];
+  timerSub: Subscription;
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -26,7 +27,26 @@ export class ListPage implements OnInit {
       this.listID = params.id;
       console.log(`Editing: ${this.listID}`);
       this.refresh();
+      const syncTimer = timer(5000, 10000);
+      this.timerSub = syncTimer.subscribe(() => this.asyncUpdate);
     });
+  }
+
+  ngOnDestroy() {
+    this.timerSub.unsubscribe();
+  }
+
+  asyncUpdate() {
+    this.listItemService
+      .syncListItems(this.listID)
+      .subscribe((listItems: ListItem[]) => {
+        if (listItems && listItems.length > 0) {
+          console.log('Received async update', listItems);
+          // Get all from local storage, as sync will update that.
+          // What we want to avoid is making a full update request via API.
+          this.items = this.listItemService.getAllLocal(this.listID);
+        }
+      });
   }
 
   refresh() {

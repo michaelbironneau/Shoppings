@@ -67,13 +67,17 @@ export class ListItemService {
         if (!status) {
           console.warn(`Failed to sync list ${listID}`);
         }
-        const listStr = localStorage.getItem(`list-${listID}`);
-        if (listStr == null) {
-          return [];
-        }
-        return JSON.parse(listStr);
+        return this.getAllLocal(listID);
       })
     );
+  }
+
+  getAllLocal(listID: string): ListItem[] {
+    const listStr = localStorage.getItem(`list-${listID}`);
+    if (listStr == null) {
+      return [];
+    }
+    return JSON.parse(listStr);
   }
 
   searchAutocompleteAPI(needle: string): Observable<ListItem[]> {
@@ -181,7 +185,7 @@ export class ListItemService {
       .get(`${environment.api}/lists/${listID}/updates/${updateKey}`)
       .pipe(
         map((update: ListUpdate) => {
-          if (update.updatedAt === 0) {
+          if (update.updatedAt === 0 || update.updates.length === 0) {
             return [];
           }
           const newUpdateValue = update.updatedAt.toString();
