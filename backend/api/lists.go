@@ -15,13 +15,14 @@ USING (VALUES (@InListId,
 			   @InItemId,
 			   @inName, 
 			   @InQuantity,
-			   @InUsername)) AS up(ListId, ItemId, [Name], Quantity, Username)
+               @InChecked,
+			   @InUsername)) AS up(ListId, ItemId, [Name], Quantity, Checked, Username)
 ON TARGET.ListId = up.ListId AND (up.ItemId = TARGET.ItemId OR up.[Name] = TARGET.[Name])
 WHEN MATCHED THEN
-	UPDATE SET TARGET.Quantity = up.Quantity, TARGET.Username = up.Username
+	UPDATE SET TARGET.Quantity = up.Quantity, TARGET.Username = up.Username, TARGET.Checked = up.Checked
 WHEN NOT MATCHED THEN 
-	INSERT ([ListId], [ItemId], [Name], Quantity, Username)
-		VALUES (up.ListId, up.ItemId, up.[Name], up.Quantity, up.Username);`
+	INSERT ([ListId], [ItemId], [Name], Quantity, Checked, Username)
+		VALUES (up.ListId, up.ItemId, up.[Name], up.Quantity, up.Checked, up.Username);`
 
 func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 	// update or create item
@@ -71,6 +72,7 @@ func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 		sql.Named("InItemId", itemID),
 		sql.Named("InName", item.Name),
 		sql.Named("InQuantity", item.Quantity),
+		sql.Named("InChecked", item.Checked),
 		sql.Named("InUsername", principal))
 	return dbError(err)
 }
@@ -122,6 +124,7 @@ LEFT JOIN App.StoreOrder SO ON SO.ItemId = I.ItemId AND SO.StoreId = L.StoreId
 WHERE LI.ListId = @InListId AND ValidFrom > @InSince AND LI.Quantity > 0
 	`
 	var ret ListUpdate
+	ret.Updates = make([]ListItem, 0)
 	rows, err := db.Query(s, sql.Named("InListId", listID), sql.Named("InSince", time.Unix(int64(since), 0)))
 	if err != nil {
 		return dbError(err)
@@ -237,7 +240,7 @@ WHERE L.Archived = 0
 GROUP BY L.ListId, CAST(L.ListId AS VARCHAR(255)), ISNULL(L.Name, ''), ISNULL(S.Name, '')
 ORDER BY L.ListId
 		`
-	var ret []List
+	ret := make([]List, 0)
 	rows, err := db.Query(query)
 	if err != nil {
 		return dbError(err)

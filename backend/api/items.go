@@ -14,7 +14,7 @@ func GetStores(c *fiber.Ctx, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	var stores []Store
+	stores := make([]Store, 0)
 	rows, err := db.Query("SELECT CAST(StoreID AS VARCHAR(255)), [Name] FROM App.Store ORDER BY StoreId")
 	if err != nil {
 		return dbError(err)
@@ -41,7 +41,7 @@ func GetAllItems(c *fiber.Ctx, db *sql.DB) error {
 		return dbError(err)
 	}
 	defer rows.Close()
-	var items []Item
+	items := make([]Item, 0)
 	for rows.Next() {
 		var item Item
 		if err := rows.Scan(&item.ID, &item.Name); err != nil {
@@ -99,7 +99,7 @@ func SearchItem(c *fiber.Ctx, db *sql.DB) error {
 		return dbError(err)
 	}
 	defer rows.Close()
-	var ret []Item
+	ret := make([]Item, 0)
 	for rows.Next() {
 		var i Item
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
