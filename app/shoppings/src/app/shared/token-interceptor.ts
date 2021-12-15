@@ -22,13 +22,16 @@ export class TokenInterceptor implements HttpInterceptor {
       console.warn('Trying to make HTTP requests in local seed mode');
       return next.handle(req);
     }
+    if (req.url.indexOf('token') !== -1) {
+      return next.handle(req);
+    }
 
     const token = localStorage.getItem('token');
 
     // if there is no token, skip
     if (!token) {
       console.warn('No token - redirecting to login');
-      this.router.navigate(['/auth']);
+      this.router.navigate(['/login']);
       return of(null);
     }
 

@@ -15,9 +15,15 @@ export class SyncService implements OnDestroy {
   networkListener: PluginListenerHandle;
   syncing: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   constructor(protected http: HttpClient) {
+    console.log('Starting sync service');
+    Network.getStatus().then((status) => {
+      console.log('Initial network status', status);
+      this.haveNetworkConnectivity = status.connected;
+    });
     this.networkListener = Network.addListener(
       'networkStatusChange',
       (status) => {
+        console.log('Network status change', status);
         if (status.connected && !this.haveNetworkConnectivity) {
           this.pushQueuedUpdates();
         }
@@ -28,9 +34,7 @@ export class SyncService implements OnDestroy {
 
   pushQueuedUpdates() {
     if (!environment.api) {
-      console.warn(
-        'Cannot push queued updates, not sure why this has been invoked!'
-      );
+      console.warn('Cannot push queued updates in local mode');
       localStorage.removeItem('queue'); // remove this for good measure if we're in demo mode
     }
     if (!this.haveNetworkConnectivity) {
