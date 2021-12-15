@@ -1,18 +1,16 @@
 import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { BaseService } from './base.service';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { Token } from '@angular/compiler';
+import { Token } from '../models/token';
+import { SyncService } from './sync.service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class AuthService extends BaseService {
-  constructor(private http: HttpClient) {
-    super();
-  }
+export class AuthService {
+  constructor(private http: HttpClient, private sync: SyncService) {}
 
   getToken(): string {
     return localStorage.getItem('token');
@@ -29,7 +27,7 @@ export class AuthService extends BaseService {
     if (!environment.api) {
       return of(true);
     }
-    if (!this.haveNetworkConnectivity) {
+    if (!this.sync.haveNetworkConnectivity.getValue()) {
       throw Error('You must have network connectivity to log in');
     }
     return this.http
@@ -39,10 +37,13 @@ export class AuthService extends BaseService {
       })
       .pipe(
         map((token: Token) => {
-          localStorage.set('token', token);
+          localStorage.setItem('token', token.token);
           return true;
         }),
-        catchError((err) => of(false))
+        catchError((err) => {
+          console.error(err);
+          return of(false);
+        })
       );
   }
 }

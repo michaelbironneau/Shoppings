@@ -11,14 +11,15 @@ import { BehaviorSubject, forkJoin } from 'rxjs';
   providedIn: 'root',
 })
 export class SyncService implements OnDestroy {
-  haveNetworkConnectivity = false;
+  haveNetworkConnectivity: BehaviorSubject<boolean> =
+    new BehaviorSubject<boolean>(false);
   networkListener: PluginListenerHandle;
   syncing: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   constructor(protected http: HttpClient) {
     console.log('Starting sync service');
     Network.getStatus().then((status) => {
       console.log('Initial network status', status);
-      this.haveNetworkConnectivity = status.connected;
+      this.haveNetworkConnectivity.next(status.connected);
     });
     this.networkListener = Network.addListener(
       'networkStatusChange',
@@ -27,7 +28,7 @@ export class SyncService implements OnDestroy {
         if (status.connected && !this.haveNetworkConnectivity) {
           this.pushQueuedUpdates();
         }
-        this.haveNetworkConnectivity = status.connected;
+        this.haveNetworkConnectivity.next(status.connected);
       }
     );
   }
@@ -37,7 +38,7 @@ export class SyncService implements OnDestroy {
       console.warn('Cannot push queued updates in local mode');
       localStorage.removeItem('queue'); // remove this for good measure if we're in demo mode
     }
-    if (!this.haveNetworkConnectivity) {
+    if (!this.haveNetworkConnectivity.getValue()) {
       console.warn('Cannot push queued updates without network connectivity');
       return;
     }
@@ -60,7 +61,7 @@ export class SyncService implements OnDestroy {
     // eslint-disable-next-line guard-for-in
     for (const listID in groups) {
       const update: ListUpdate = { updates: [], updatedAt: 0 };
-      update.updates = [groups[listID]];
+      update.updates = groups[listID];
       requests$.push(
         this.http.patch(`${environment.api}/lists/${listID}/updates`, update)
       );

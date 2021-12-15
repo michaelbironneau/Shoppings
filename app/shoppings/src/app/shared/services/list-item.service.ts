@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { BaseService } from './base.service';
 import { map } from 'rxjs/operators';
 import { seedListItemsA, seedListItemsB } from '../seed-data/list-items';
 import { ListItem } from '../models/list-item';
@@ -20,28 +19,29 @@ if (!environment.api) {
 @Injectable({
   providedIn: 'root',
 })
-export class ListItemService extends BaseService {
-  constructor(private sync: SyncService, private http: HttpClient) {
-    super();
-  }
+export class ListItemService {
+  constructor(private sync: SyncService, private http: HttpClient) {}
 
   trySyncList(listID: string): Observable<boolean> {
     if (!environment.api) {
       return of(true);
     }
-    if (environment.api && !this.haveNetworkConnectivity) {
+    if (environment.api && !this.sync.haveNetworkConnectivity.getValue()) {
+      console.log('No network to sync list items');
       return of(false); // can't sync list if we don't have a network
     }
-    this.http.get<ListUpdate>(`${environment.api}/lists/${listID}/items`).pipe(
-      map((items: ListUpdate) => {
-        localStorage.setItem(`list-${listID}`, JSON.stringify(items.updates));
-        localStorage.setItem(
-          `list-${listID}-updated`,
-          items.updatedAt.toString()
-        );
-        return true;
-      })
-    );
+    return this.http
+      .get<ListUpdate>(`${environment.api}/lists/${listID}/items`)
+      .pipe(
+        map((items: ListUpdate) => {
+          localStorage.setItem(`list-${listID}`, JSON.stringify(items.updates));
+          localStorage.setItem(
+            `list-${listID}-updated`,
+            items.updatedAt.toString()
+          );
+          return true;
+        })
+      );
   }
 
   trySyncAutocompleteList(): Observable<boolean> {
@@ -49,7 +49,7 @@ export class ListItemService extends BaseService {
       localStorage.setItem('autocomplete', JSON.stringify(autocompleteItems));
       return of(true);
     }
-    if (!this.haveNetworkConnectivity) {
+    if (!this.sync.haveNetworkConnectivity.getValue()) {
       return of(false);
     }
     this.http.get<Item[]>(`${environment.api}/items`).pipe(
@@ -78,7 +78,7 @@ export class ListItemService extends BaseService {
 
   searchAutocompleteAPI(needle: string): Observable<ListItem[]> {
     return this.http
-      .get<Item[]>(`${environment.api}/item-search/${needle}`)
+      .get<Item[]>(`${environment.api}/search-items/${needle}`)
       .pipe(
         map((items: Item[]) =>
           items.map((item: Item) => ({
@@ -93,7 +93,7 @@ export class ListItemService extends BaseService {
   }
 
   searchAutocomplete(needle: string): Observable<ListItem[]> {
-    if (environment.api && this.haveNetworkConnectivity) {
+    if (environment.api && this.sync.haveNetworkConnectivity.getValue()) {
       // prefer live search if available
       return this.searchAutocompleteAPI(needle);
     }
@@ -144,9 +144,10 @@ export class ListItemService extends BaseService {
     if (!environment.api) {
       return of(true);
     }
-    if (environment.api && this.haveNetworkConnectivity) {
-      let update: ListUpdate;
-      update.updates = [items[existingItem]];
+    if (environment.api && this.sync.haveNetworkConnectivity.getValue()) {
+      const update: ListUpdate = {
+        updates: [items[existingItem]],
+      };
       return this.http
         .patch(`${environment.api}/lists/${listID}/updates`, update)
         .pipe(map(() => true));
@@ -171,7 +172,7 @@ export class ListItemService extends BaseService {
 
   syncListItems(listID: string): Observable<ListItem[]> {
     // sync locally and return any new items from the API
-    if (!environment.api || !this.haveNetworkConnectivity) {
+    if (!environment.api || !this.sync.haveNetworkConnectivity.getValue()) {
       return of([]);
     }
     const storageKey = `list-${listID}`;
@@ -206,7 +207,7 @@ export class ListItemService extends BaseService {
     const storageKey = `list-${listID}`;
     const updateKey = `list-${listID}-updated`;
     const listStr = localStorage.getItem(storageKey);
-    if (!listStr) {
+    if (!listStr || listStr === 'null') {
       // we should do a full update if we have network connectivity,
       // but for now let's just update based on these items.
       console.warn(`Updating unknown list ${listID}`);
@@ -221,11 +222,14 @@ export class ListItemService extends BaseService {
     });
     listItems = listItems.filter((item: ListItem) => item.quantity > 0); // delete if quantity == 0
     localStorage.setItem(storageKey, JSON.stringify(listItems));
-    if (environment.api && this.haveNetworkConnectivity) {
+    if (environment.api && this.sync.haveNetworkConnectivity.getValue()) {
       return this.http
         .patch(`${environment.api}/lists/${listID}/updates`, update)
         .pipe(map(() => true));
-    } else if (environment.api && !this.haveNetworkConnectivity) {
+    } else if (
+      environment.api &&
+      !this.sync.haveNetworkConnectivity.getValue()
+    ) {
       update.updates.forEach((item: ListItem) => {
         this.sync.enqueueUpdate(item);
       });

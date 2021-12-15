@@ -1,28 +1,27 @@
 import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { BaseService } from './base.service';
 import { List, NewResource } from '../models/list';
 import { map } from 'rxjs/operators';
 import { seedLists } from '../seed-data/lists';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
+import { SyncService } from './sync.service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class ListService extends BaseService {
-  constructor(private http: HttpClient) {
-    super();
-  }
+export class ListService {
+  constructor(private http: HttpClient, private sync: SyncService) {}
   trySyncLists(): Observable<boolean> {
     if (!environment.api) {
       localStorage.setItem('lists', JSON.stringify(seedLists));
       return of(true);
     }
-    if (!this.haveNetworkConnectivity) {
+    if (!this.sync.haveNetworkConnectivity.getValue()) {
+      console.log('No network - not syncing lists');
       return of(false);
     }
-    this.http.get<List[]>(`${environment.api}/lists`).pipe(
+    return this.http.get<List[]>(`${environment.api}/lists`).pipe(
       map((lists: List[]) => {
         localStorage.setItem('lists', JSON.stringify(lists));
         return true;
@@ -46,18 +45,24 @@ export class ListService extends BaseService {
 
   // add list, returning ID
   add(list: List): Observable<string> {
-    if (environment.api && !this.haveNetworkConnectivity) {
+    if (environment.api && !this.sync.haveNetworkConnectivity.getValue()) {
       throw Error('You must be connected to the internet to add lists');
-    } else if (environment.api && this.haveNetworkConnectivity) {
+    } else if (
+      environment.api &&
+      this.sync.haveNetworkConnectivity.getValue()
+    ) {
       return this.http.post<NewResource>(`${environment.api}/lists`, list).pipe(
         map((newR: NewResource) => {
           list.id = newR.id;
           const listsStr = localStorage.getItem('lists');
+          let lists: List[];
           if (!listsStr) {
+            lists = [list];
             localStorage.setItem('lists', JSON.stringify([list]));
             return newR.id;
+          } else {
+            lists = JSON.parse(listsStr);
           }
-          const lists: List[] = JSON.parse(listsStr);
           lists.push(list);
           localStorage.setItem('lists', JSON.stringify(lists));
           return newR.id;
@@ -103,9 +108,12 @@ export class ListService extends BaseService {
 
   // archive the given list by ID
   archive(listID: string): Observable<boolean> {
-    if (environment.api && !this.haveNetworkConnectivity) {
+    if (environment.api && !this.sync.haveNetworkConnectivity.getValue()) {
       throw Error('You must be connected to the internet to archive a list');
-    } else if (environment.api && this.haveNetworkConnectivity) {
+    } else if (
+      environment.api &&
+      this.sync.haveNetworkConnectivity.getValue()
+    ) {
       return this.http
         .post(`${environment.api}/lists/${listID}/archive`, null)
         .pipe(map(() => this.archiveLocal(listID)));
