@@ -9,7 +9,7 @@ type List struct {
 }
 
 type ListItem struct {
-	ItemID     string `json:"id"`
+	ItemID     *string `json:"id"`
 	ListID     string `json:"listId"`
 	Name       string `json:"name"`
 	Quantity   int    `json:"quantity"`

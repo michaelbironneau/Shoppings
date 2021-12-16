@@ -34,7 +34,10 @@ export class ListItemService {
       .get<ListUpdate>(`${environment.api}/lists/${listID}/items`)
       .pipe(
         map((items: ListUpdate) => {
-          localStorage.setItem(`list-${listID}`, JSON.stringify(items.updates));
+          const nonZeroItems = items.updates.filter(
+            (item) => item.quantity > 0
+          );
+          localStorage.setItem(`list-${listID}`, JSON.stringify(nonZeroItems));
           localStorage.setItem(
             `list-${listID}-updated`,
             items.updatedAt.toString()
@@ -167,7 +170,11 @@ export class ListItemService {
         (update.name && item.name && update.name === item.name) ||
         (update.id && update.id && update.id === item.id)
     );
-    if (itemIndex === -1) {
+    if (itemIndex !== -1 && update.quantity === 0) {
+      items.splice(itemIndex, 1);
+      return;
+    }
+    if (itemIndex === -1 && update.quantity > 0) {
       items.push(update);
       return;
     }
@@ -181,18 +188,25 @@ export class ListItemService {
     }
     const storageKey = `list-${listID}`;
     const updateKey = `list-${listID}-updated`;
-    this.http
-      .get(`${environment.api}/lists/${listID}/updates/${updateKey}`)
+    let lastUpdate = localStorage.getItem(updateKey);
+    if (lastUpdate === null) {
+      lastUpdate = '0';
+    }
+    return this.http
+      .get(`${environment.api}/lists/${listID}/updates/${lastUpdate}`)
       .pipe(
         map((update: ListUpdate) => {
           if (update.updatedAt === 0 || update.updates.length === 0) {
             return [];
           }
-          const newUpdateValue = update.updatedAt.toString();
+          const newUpdateValue = (update.updatedAt + 1).toString();
           localStorage.setItem(updateKey, newUpdateValue);
           const listStr = localStorage.getItem(storageKey);
           if (listStr === null) {
-            localStorage.setItem(storageKey, JSON.stringify(update.updates)); // new list, or no items written yet
+            const nonZeroUpdates = update.updates.filter(
+              (item) => item.quantity > 0
+            );
+            localStorage.setItem(storageKey, JSON.stringify(nonZeroUpdates)); // new list, or no items written yet
             return update.updates;
           }
           const listItems: ListItem[] = JSON.parse(listStr);

@@ -31,7 +31,7 @@ func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 		err    error
 	)
 	// 1. If there's no ItemID, try to create one
-	if item.ItemID == "" {
+	if item.ItemID == nil || *item.ItemID == "" {
 		if item.Name == "" {
 			return &Error{Code: 400, Message: "Item ID and Name cannot both be blank"}
 		}
@@ -60,7 +60,7 @@ func updateItem(db *sql.DB, listID int, item ListItem, principal string) error {
 			//fine if we don't have a match, ignore
 		}
 	} else {
-		itemIDConv, err := strconv.Atoi(item.ItemID)
+		itemIDConv, err := strconv.Atoi(*item.ItemID) // in this branch, we have checked ItemID is not nil
 		if err != nil {
 			return &Error{Code: 400, Message: "The item ID should be a number"}
 		}
@@ -111,7 +111,7 @@ func GetItems(c *fiber.Ctx, db *sql.DB, since int) error {
 	s := `
 SELECT 
 	LI.ListId, 
-	ISNULL(LI.ItemId, ''), 
+	LI.ItemId, 
 	ISNULL(ISNULL(I.Name, LI.Name),'') AS [Name], 
 	Quantity, 
 	Checked, 
@@ -121,11 +121,11 @@ FROM App.ListItem LI
 INNER JOIN App.List L ON L.ListId = LI.ListId
 LEFT JOIN App.Item I ON I.ItemId = LI.ItemID
 LEFT JOIN App.StoreOrder SO ON SO.ItemId = I.ItemId AND SO.StoreId = L.StoreId
-WHERE LI.ListId = @InListId AND ValidFrom > @InSince AND LI.Quantity > 0
+WHERE LI.ListId = @InListId AND ValidFrom > @InSince
 	`
 	var ret ListUpdate
 	ret.Updates = make([]ListItem, 0)
-	rows, err := db.Query(s, sql.Named("InListId", listID), sql.Named("InSince", time.Unix(int64(since), 0)))
+	rows, err := db.Query(s, sql.Named("InListId", listID), sql.Named("InSince", time.Unix(0, int64(since)*int64(time.Millisecond))))
 	if err != nil {
 		return dbError(err)
 	}
@@ -134,13 +134,17 @@ WHERE LI.ListId = @InListId AND ValidFrom > @InSince AND LI.Quantity > 0
 		var (
 			li        ListItem
 			updatedAt time.Time
+			itemId sql.NullString
 		)
-		if err := rows.Scan(&li.ListID, &li.ItemID, &li.Name, &li.Quantity, &li.Checked, &li.StoreOrder, &updatedAt); err != nil {
+		if err := rows.Scan(&li.ListID, &itemId, &li.Name, &li.Quantity, &li.Checked, &li.StoreOrder, &updatedAt); err != nil {
 			return dbError(err)
+		}
+		if itemId.Valid {
+			li.ItemID = &itemId.String
 		}
 		ret.Updates = append(ret.Updates, li)
 		if updatedAt.Unix() > ret.UpdateTime {
-			ret.UpdateTime = updatedAt.Unix()
+			ret.UpdateTime = updatedAt.UnixNano()/int64(time.Millisecond)
 		}
 	}
 	return c.JSON(ret)

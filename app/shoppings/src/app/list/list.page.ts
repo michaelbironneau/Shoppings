@@ -4,6 +4,7 @@ import { ListItem } from '../shared/models/list-item';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { ListItemService } from '../shared/services/list-item.service';
 import { Subscription, timer } from 'rxjs';
+import { ToastController } from '@ionic/angular';
 
 @Component({
   selector: 'app-list',
@@ -19,7 +20,8 @@ export class ListPage implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private listItemService: ListItemService
+    private listItemService: ListItemService,
+    private toastController: ToastController
   ) {}
 
   ngOnInit() {
@@ -28,12 +30,38 @@ export class ListPage implements OnInit, OnDestroy {
       console.log(`Editing: ${this.listID}`);
       this.refresh();
       const syncTimer = timer(5000, 10000);
-      this.timerSub = syncTimer.subscribe(() => this.asyncUpdate);
+      this.timerSub = syncTimer.subscribe(() => this.asyncUpdate());
     });
   }
 
   ngOnDestroy() {
     this.timerSub.unsubscribe();
+  }
+
+  async presentUpdateToast(updateLength: number) {
+    const toast = await this.toastController.create({
+      message: `${updateLength} updates received`,
+      duration: 2000,
+    });
+    toast.present();
+  }
+
+  updateChangesThings(update: ListItem[]): boolean {
+    const yes = update.findIndex((item: ListItem) => {
+      const myIndex = this.items.findIndex(
+        (myItem: ListItem) =>
+          (myItem.id && item.id && myItem.id === item.id) ||
+          myItem.name === item.name
+      );
+      if (myIndex === -1) {
+        return true;
+      }
+      if (this.items[myIndex].quantity !== item.quantity) {
+        return true;
+      }
+      return false;
+    });
+    return yes !== -1;
   }
 
   asyncUpdate() {
@@ -45,6 +73,7 @@ export class ListPage implements OnInit, OnDestroy {
           // Get all from local storage, as sync will update that.
           // What we want to avoid is making a full update request via API.
           this.items = this.listItemService.getAllLocal(this.listID);
+          this.presentUpdateToast(listItems.length);
         }
       });
   }
