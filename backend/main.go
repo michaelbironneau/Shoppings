@@ -75,6 +75,7 @@ func HandleError(ctx *fiber.Ctx, err error) error {
 
 func main() {
 	viper.AddConfigPath(".")
+	log.SetOutput(os.Stdout)
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		log.Fatalf("Fatal error config file: %w \n", err)
@@ -105,7 +106,6 @@ func main() {
 		// running locally
 		addr = ":8080"
 	}
-	log.SetOutput(os.Stdout)
 	log.Printf("Listening on %s\n", addr)
 	app.Listen(addr)
 }
