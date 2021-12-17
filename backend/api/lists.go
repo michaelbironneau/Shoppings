@@ -134,7 +134,7 @@ WHERE LI.ListId = @InListId AND ValidFrom > @InSince
 		var (
 			li        ListItem
 			updatedAt time.Time
-			itemId sql.NullString
+			itemId    sql.NullString
 		)
 		if err := rows.Scan(&li.ListID, &itemId, &li.Name, &li.Quantity, &li.Checked, &li.StoreOrder, &updatedAt); err != nil {
 			return dbError(err)
@@ -144,7 +144,7 @@ WHERE LI.ListId = @InListId AND ValidFrom > @InSince
 		}
 		ret.Updates = append(ret.Updates, li)
 		if updatedAt.Unix() > ret.UpdateTime {
-			ret.UpdateTime = updatedAt.UnixNano()/int64(time.Millisecond)
+			ret.UpdateTime = updatedAt.UnixNano() / int64(time.Millisecond)
 		}
 	}
 	return c.JSON(ret)

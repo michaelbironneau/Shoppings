@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -78,10 +77,11 @@ func main() {
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
-		panic(fmt.Errorf("Fatal error config file: %w \n", err))
+		log.Fatalf("Fatal error config file: %w \n", err)
 	}
 	app := fiber.New(fiber.Config{
 		// Override default error handler
+		DisableStartupMessage: true,
 		ErrorHandler: HandleError,
 	})
 	var db *sql.DB
@@ -105,5 +105,7 @@ func main() {
 		// running locally
 		addr = ":8080"
 	}
+	log.SetOutput(os.Stdout)
+	log.Printf("Listening on %s\n", addr)
 	app.Listen(addr)
 }

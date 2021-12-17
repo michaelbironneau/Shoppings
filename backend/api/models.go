@@ -10,11 +10,11 @@ type List struct {
 
 type ListItem struct {
 	ItemID     *string `json:"id"`
-	ListID     string `json:"listId"`
-	Name       string `json:"name"`
-	Quantity   int    `json:"quantity"`
-	Checked    bool   `json:"checked"`
-	StoreOrder int    `json:"storeOrder"`
+	ListID     string  `json:"listId"`
+	Name       string  `json:"name"`
+	Quantity   int     `json:"quantity"`
+	Checked    bool    `json:"checked"`
+	StoreOrder int     `json:"storeOrder"`
 }
 
 type ListUpdate struct {

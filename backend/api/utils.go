@@ -20,6 +20,9 @@ func (e *Error) Error() string {
 }
 
 func getPrincipal(db *sql.DB, token string) (string, error) {
+	if token == "" {
+		return "", Err401
+	}
 	var res sql.NullString
 	row := db.QueryRow("SELECT TOP 1 Username FROM Security.Principal WHERE Token = @InToken", sql.Named("InToken", token))
 	if err := row.Scan(&res); err != nil {
