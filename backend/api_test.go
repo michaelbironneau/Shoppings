@@ -99,12 +99,13 @@ func TestItems(t *testing.T) {
 				ii := api.Item{Name: strings.ToLower(item.Name)} // try in a different case, it should still work
 				res, err = makeTestRequest(app, "POST", "/items", token, ii)
 				So(err, ShouldBeNil)
+				time.Sleep(time.Second) // give async item update time to act
 				res, err = makeTestRequest(app, "GET", fmt.Sprintf("/lists/%s/items", listResp.ID), token, nil)
 				So(err, ShouldBeNil)
 				So(unmarshalBody(res.Body, &updates), ShouldBeNil)
 				So(updates.Updates, ShouldHaveLength, 1)
-				So(updates.Updates[0].ItemID, ShouldNotBeBlank)
-				So(updates.Updates[0].Name, ShouldEqual, item.Name)
+				So(updates.Updates[0].ItemID, ShouldNotBeNil)
+				So(updates.Updates[0].Name, ShouldEqual, strings.Title(item.Name))
 
 				//6. Add Item with new name
 				ii.Name = "New Item"

@@ -9,6 +9,7 @@ import (
 	"github.com/michaelbironneau/shoppings/backend/api"
 	"github.com/spf13/viper"
 	"log"
+	"os"
 	"time"
 )
 
@@ -96,5 +97,13 @@ func main() {
 	app.Use(cors.New())
 	app.Use(logger.New())
 	registerHandlers(app, db)
-	app.Listen(":8080")
+	var addr string
+	if p, ok := os.LookupEnv("HTTP_PLATFORM_PORT"); ok {
+		// running in Azure WebApp
+		addr = ":" + p
+	} else {
+		// running locally
+		addr = ":8080"
+	}
+	app.Listen(addr)
 }
