@@ -40,19 +40,22 @@ export class ListPage implements OnInit, OnDestroy {
 
   async presentUpdateToast(updateLength: number) {
     const toast = await this.toastController.create({
-      message: `${updateLength} updates received`,
+      message: `${updateLength} update${updateLength > 1 ? 's' : ''} received`,
       duration: 2000,
     });
     toast.present();
   }
 
-  updateChangesThings(update: ListItem[]): boolean {
-    const yes = update.findIndex((item: ListItem) => {
+  updateChangesThings(update: ListItem[]): number {
+    const yes = update.filter((item: ListItem) => {
       const myIndex = this.items.findIndex(
         (myItem: ListItem) =>
           (myItem.id && item.id && myItem.id === item.id) ||
           myItem.name === item.name
       );
+      if (myIndex === -1 && item.quantity === 0) {
+        return false; //already deleted
+      }
       if (myIndex === -1) {
         return true;
       }
@@ -61,7 +64,7 @@ export class ListPage implements OnInit, OnDestroy {
       }
       return false;
     });
-    return yes !== -1;
+    return yes.length;
   }
 
   asyncUpdate() {
@@ -72,8 +75,11 @@ export class ListPage implements OnInit, OnDestroy {
           console.log('Received async update', listItems);
           // Get all from local storage, as sync will update that.
           // What we want to avoid is making a full update request via API.
+          const changes: number = this.updateChangesThings(listItems);
           this.items = this.listItemService.getAllLocal(this.listID);
-          this.presentUpdateToast(listItems.length);
+          if (changes > 0) {
+            this.presentUpdateToast(changes);
+          }
         }
       });
   }
