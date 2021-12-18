@@ -36,15 +36,30 @@ export class HomePage implements OnInit {
     this.router.navigate(['/list', list.id]);
   }
 
+  uniqueName(): string {
+    // come up with a unique name of form 'Dec 12 List #2'
+    const startingPoint =
+      new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      }) + ' List';
+    let current = startingPoint;
+    let i = 1;
+    while (i++) {
+      const ix = this.lists.findIndex((list) => list.name === current);
+      if (ix === -1) {
+        break;
+      }
+      current = startingPoint + ' #' + i.toString();
+    }
+    return current;
+  }
+
   onAdd() {
     console.debug('Adding new list');
     const newList: List = {
       id: '',
-      name:
-        new Date().toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }) + ' List',
+      name: this.uniqueName(),
       archived: false,
       summary: '(empty)',
     };
