@@ -78,7 +78,7 @@ func main() {
 	log.SetOutput(os.Stdout)
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
-		log.Fatalf("Fatal error config file: %w \n", err)
+		log.Fatalf("Fatal error config file: %v \n", err)
 	}
 	app := fiber.New(fiber.Config{
 		// Override default error handler

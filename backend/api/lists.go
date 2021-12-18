@@ -143,8 +143,9 @@ WHERE LI.ListId = @InListId AND ValidFrom > @InSince
 			li.ItemID = &itemId.String
 		}
 		ret.Updates = append(ret.Updates, li)
-		if updatedAt.Unix() > ret.UpdateTime {
-			ret.UpdateTime = updatedAt.UnixNano() / int64(time.Millisecond)
+		updatedAtMillis := updatedAt.UnixNano() / int64(time.Millisecond)
+		if updatedAtMillis > ret.UpdateTime {
+			ret.UpdateTime = updatedAtMillis
 		}
 	}
 	return c.JSON(ret)
