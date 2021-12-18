@@ -15,6 +15,11 @@ export class AuthService {
   getToken(): string {
     return localStorage.getItem('token');
   }
+
+  logout() {
+    localStorage.removeItem('token');
+  }
+
   isAuthenticated(): boolean {
     if (!environment.api) {
       return true;

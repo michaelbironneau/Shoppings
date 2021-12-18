@@ -3,6 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { List } from '../shared/models/list';
 import { ListService } from '../shared/services/list.service';
 import { Router } from '@angular/router';
+import { AuthService } from '../shared/services/auth.service';
+import { ToastController } from '@ionic/angular';
 
 @Component({
   selector: 'app-home',
@@ -12,23 +14,74 @@ import { Router } from '@angular/router';
 export class HomePage implements OnInit {
   lists: List[] = [];
 
-  constructor(private listService: ListService, private router: Router) {}
+  constructor(
+    private listService: ListService,
+    private router: Router,
+    private auth: AuthService,
+    private toasts: ToastController
+  ) {}
 
   ngOnInit() {
-    this.refresh();
+    this.refresh(null);
   }
 
-  refresh() {
-    this.listService.getAll().subscribe((lists) => {
-      this.lists = lists;
+  async presentErrorToast(msg: string) {
+    const toast = await this.toasts.create({
+      header: 'Error',
+      message: msg,
+      position: 'bottom',
+      duration: 5000,
+      color: 'danger',
     });
+    await toast.present();
+  }
+
+  refresh(e) {
+    this.listService.getAll().subscribe(
+      (lists) => {
+        this.lists = lists;
+        if (e) {
+          e.target.complete();
+        }
+      },
+      (err) => {
+        if (err.status === 401) {
+          if (e) {
+            e.target.complete();
+          }
+          this.auth.logout();
+          this.router.navigate(['/login']);
+        } else if (err.status === 0) {
+          this.presentErrorToast(
+            `Server doesn't seem to be running. Try again shortly and if it still doesn't work, ask Michael to turn it on.`
+          );
+          if (e) {
+            e.target.complete();
+          }
+        } else if (err.status === 400) {
+          this.presentErrorToast(
+            `This is an odd error to receive, make sure you're running the latest version of the app.`
+          );
+          if (e) {
+            e.target.complete();
+          }
+        } else {
+          this.presentErrorToast(
+            `Please retry soon, and if it still doesn't work tell Michael there was a server error.`
+          );
+          if (e) {
+            e.target.complete();
+          }
+        }
+      }
+    );
   }
 
   onArchive(listID: string) {
     console.debug(`Archiving list ${listID}`);
     this.listService.archive(listID).subscribe((success: boolean) => {
       console.debug(`Success? ${success}`);
-      this.refresh();
+      this.refresh(null);
     });
   }
 
@@ -65,7 +118,7 @@ export class HomePage implements OnInit {
     };
     this.listService.add(newList).subscribe((newID: string) => {
       console.debug(`New list ID: ${newID}`);
-      this.refresh();
+      this.refresh(null);
     });
   }
 }
