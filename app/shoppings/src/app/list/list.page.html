@@ -40,33 +40,78 @@
     </ion-row>
     <ion-row>
       <ion-col>
-        <h3>Items</h3>
+        <h3>Items to Buy</h3>
         <div id="list-items">
           <ion-list>
             <ion-item-sliding *ngFor="let item of items">
-              <ion-item>
-                <ion-label>{{item.name}}</ion-label>
-                <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
-                  >{{item.quantity}}</ion-badge
-                >
-              </ion-item>
+              <div *ngIf="!item.checked">
+                <ion-item>
+                  <ion-label>{{item.name}}</ion-label>
+                  <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
+                    >{{item.quantity}}</ion-badge
+                  >
+                </ion-item>
 
-              <ion-item-options side="end">
-                <ion-item-option (click)="onApplyDiff(item, 1)" color="success"
-                  >&nbsp;+&nbsp;</ion-item-option
-                >
-                <ion-item-option
-                  (click)="onApplyDiff(item, -1)"
-                  color="warning"
-                  *ngIf="item.quantity>0"
-                  >&nbsp;-&nbsp;</ion-item-option
-                >
-                <ion-item-option
-                  (click)="onApplyDiff(item, -1*item.quantity)"
-                  color="danger"
-                  >Delete</ion-item-option
-                >
-              </ion-item-options>
+                <ion-item-options side="end">
+                  <ion-item-option
+                    (click)="onApplyDiff(item, 1)"
+                    color="success"
+                    >&nbsp;+&nbsp;</ion-item-option
+                  >
+                  <ion-item-option
+                    (click)="onApplyDiff(item, -1)"
+                    color="warning"
+                    *ngIf="item.quantity>0"
+                    >&nbsp;-&nbsp;</ion-item-option
+                  >
+                  <ion-item-option
+                    (click)="onApplyDiff(item, -1*item.quantity)"
+                    color="danger"
+                    >Delete</ion-item-option
+                  >
+                </ion-item-options>
+              </div>
+            </ion-item-sliding>
+          </ion-list>
+        </div>
+        <h3>
+          Completed
+          <ion-chip (click)="onListReset()" color="success">
+            <ion-label>Reset</ion-label>
+            <ion-icon name="arrow-undo-circle-outline"></ion-icon>
+          </ion-chip>
+        </h3>
+        <div id="list-items">
+          <ion-list>
+            <ion-item-sliding *ngFor="let item of items">
+              <div *ngIf="item.checked">
+                <ion-item>
+                  <ion-icon color="success" name="checkmark-outline"></ion-icon>
+                  <ion-label>&nbsp;{{item.name}}</ion-label>
+                  <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
+                    >{{item.quantity}}</ion-badge
+                  >
+                </ion-item>
+
+                <ion-item-options side="end">
+                  <ion-item-option
+                    (click)="onApplyDiff(item, 1)"
+                    color="success"
+                    >&nbsp;+&nbsp;</ion-item-option
+                  >
+                  <ion-item-option
+                    (click)="onApplyDiff(item, -1)"
+                    color="warning"
+                    *ngIf="item.quantity>0"
+                    >&nbsp;-&nbsp;</ion-item-option
+                  >
+                  <ion-item-option
+                    (click)="onApplyDiff(item, -1*item.quantity)"
+                    color="danger"
+                    >Delete</ion-item-option
+                  >
+                </ion-item-options>
+              </div>
             </ion-item-sliding>
           </ion-list>
         </div>

@@ -35,6 +35,7 @@ export class ListPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    console.log('Cleaning up list sub');
     this.timerSub.unsubscribe();
   }
 
@@ -131,6 +132,25 @@ export class ListPage implements OnInit, OnDestroy {
       });
   }
 
+  onListReset() {
+    const updates = this.items
+      .filter((item: ListItem) => item.checked)
+      .map((item: ListItem) => ({
+        listId: item.listId,
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        checked: false,
+      }));
+    this.listItemService
+      .applyUpdate(this.listID, {
+        updates: updates,
+      })
+      .subscribe(() => {
+        this.refresh();
+      });
+  }
+
   onSearch(e) {
     if (e.target.value.length === 0) {
       this.onSearchCancel();
@@ -146,6 +166,7 @@ export class ListPage implements OnInit, OnDestroy {
   }
 
   onShop() {
+    this.ngOnDestroy();
     this.router.navigate(['/shop', this.listID]);
   }
 

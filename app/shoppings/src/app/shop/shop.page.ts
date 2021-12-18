@@ -36,6 +36,7 @@ export class ShopPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    console.log('Cleaning up shop sub');
     this.timerSub.unsubscribe();
   }
 
