@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package io.bironneau.shoppings;
 
 import com.getcapacitor.BridgeActivity;
 
