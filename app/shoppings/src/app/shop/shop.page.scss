@@ -6,3 +6,8 @@
   min-height: 20px;
   background-color: lighten(#42d77d, 25%);
 }
+
+#container {
+  height: 80vh;
+  overflow-y: scroll;
+}

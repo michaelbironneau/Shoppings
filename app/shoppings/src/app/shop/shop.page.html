@@ -32,26 +32,27 @@
       </ion-row>
     </ion-grid>
   </div>
+  <div id="container">
+    <div id="list-items">
+      <ion-list>
+        <ion-item-sliding *ngFor="let item of items">
+          <div *ngIf="!item.checked">
+            <ion-item>
+              <ion-label>{{item.name}}</ion-label>
+              <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
+                >{{item.quantity}}</ion-badge
+              >
+            </ion-item>
 
-  <div id="list-items">
-    <ion-list>
-      <ion-item-sliding *ngFor="let item of items">
-        <div *ngIf="!item.checked">
-          <ion-item>
-            <ion-label>{{item.name}}</ion-label>
-            <ion-badge color="primary" slot="end" *ngIf="item.quantity>1"
-              >{{item.quantity}}</ion-badge
-            >
-          </ion-item>
-
-          <ion-item-options side="end">
-            <ion-item-option (click)="onComplete(item)" color="success"
-              >Check off</ion-item-option
-            >
-          </ion-item-options>
-        </div>
-      </ion-item-sliding>
-    </ion-list>
+            <ion-item-options side="end">
+              <ion-item-option (click)="onComplete(item)" color="success"
+                >Check off</ion-item-option
+              >
+            </ion-item-options>
+          </div>
+        </ion-item-sliding>
+      </ion-list>
+    </div>
   </div>
 
   <div id="progress-bar" slot="fixed">
