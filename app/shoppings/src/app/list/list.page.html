@@ -120,6 +120,16 @@
     <div id="fab-shop">
       <ion-fab
         vertical="bottom"
+        horizontal="start"
+        style="position: fixed; left: 20px"
+      >
+        <ion-fab-button (click)="onScan()" color="primary" size="large"
+          ><ion-icon name="scan-outline"></ion-icon
+        ></ion-fab-button>
+        <ion-label>Add from camera</ion-label>
+      </ion-fab>
+      <ion-fab
+        vertical="bottom"
         horizontal="end"
         style="position: fixed; right: 20px"
       >

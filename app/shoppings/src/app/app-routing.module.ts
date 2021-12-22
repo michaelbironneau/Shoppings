@@ -31,6 +31,12 @@ const routes: Routes = [
     loadChildren: () =>
       import('./shop/shop.module').then((m) => m.ShopPageModule),
   },
+  {
+    path: 'scan',
+    loadChildren: () =>
+      import('./scan/scan.module').then((m) => m.ScanPageModule),
+    canActivate: [AuthGuard],
+  },
 ];
 
 @NgModule({
