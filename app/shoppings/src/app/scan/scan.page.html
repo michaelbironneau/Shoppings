@@ -1,22 +1,37 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Scan from camera</ion-title>
+    <ion-title>Capture with camera</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <div id="progress" *ngIf="progress<1" slot="fixed">
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Scanning...</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-progress-bar [value]="progress"></ion-progress-bar>
-        This can take a little while. For better results, try to include just
-        the list that you want to import, and not an entire recipe.
-      </ion-card-content>
-    </ion-card>
-  </div>
+<ion-content *ngIf="step ===2">
+  <p>&nbsp;</p>
+  <ion-list>
+    <ion-item *ngFor="let result of results">
+      <ion-checkbox slot="start" [(ngModel)]="result.checked"></ion-checkbox>
+      <ion-label>{{result.name}}</ion-label>
+    </ion-item>
+  </ion-list>
+  <ion-button color="success" expand="block" (click)="onImport()">
+    <ion-icon slot="start" name="add-outline"></ion-icon>
+    Import
+  </ion-button>
+</ion-content>
+
+<ion-content *ngIf="progress<1 && step === 1">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Scanning...</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-progress-bar [value]="progress"></ion-progress-bar>
+      This can take a little while. For better results, try to include just the
+      list that you want to import, and not an entire recipe.
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
+<ion-content *ngIf="progress===1&& step === 1">
   <img (click)="onScan('1.jpg')" src="../assets/test-images/1.jpg" />
   <img (click)="onScan('2.jpg')" src="../assets/test-images/2.jpg" />
   <img (click)="onScan('3.jpg')" src="../assets/test-images/3.jpg" />

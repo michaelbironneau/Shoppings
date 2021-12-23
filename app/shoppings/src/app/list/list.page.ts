@@ -167,7 +167,7 @@ export class ListPage implements OnInit, OnDestroy {
 
   onScan() {
     this.ngOnDestroy();
-    this.router.navigate(['/scan']);
+    this.router.navigate(['/scan', this.listID]);
   }
 
   onShop() {

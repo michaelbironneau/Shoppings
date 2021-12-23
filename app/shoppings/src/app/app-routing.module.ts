@@ -32,7 +32,7 @@ const routes: Routes = [
       import('./shop/shop.module').then((m) => m.ShopPageModule),
   },
   {
-    path: 'scan',
+    path: 'scan/:id',
     loadChildren: () =>
       import('./scan/scan.module').then((m) => m.ScanPageModule),
     canActivate: [AuthGuard],
