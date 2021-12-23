@@ -3,6 +3,7 @@ import inflect
 from string import digits, punctuation
 
 p = inflect.engine()
+keywords = set()
 foods = set()
 common_words = set(["of", "a", "the", "and", "or"])
 with open("./Food.json", "r", encoding="UTF-8") as f:
@@ -11,13 +12,19 @@ with open("./Food.json", "r", encoding="UTF-8") as f:
         food_name = food["name"].lower()
         food_name = food_name.translate(str.maketrans("", "", punctuation))
         food_name = food_name.translate(str.maketrans("", "", digits))
+        foods.add(food_name)
         for word in food_name.split(" "):
             if len(word) < 2 or word in common_words:
                 continue
-            foods.add(word)
-            foods.add(p.plural_noun(word))
+            keywords.add(word)
+            keywords.add(p.plural_noun(word))
 
-print(f"Read in {len(foods)} foods.")
+print(f"Read in {len(keywords)} keywords.")
+f = open("./keywords.json", "w")
+f.write(json.dumps(list(keywords)))
+f.close()
+print(f"Read in {len(foods)} food phrases.")
 f = open("./common-foods.json", "w")
 f.write(json.dumps(list(foods)))
+f.close()
 print("Done!")

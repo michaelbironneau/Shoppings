@@ -1,0 +1,34 @@
+Underwear
+Sock
+Bra
+Sleepwear
+T-shirt
+Dress Shirt
+Casual Shirt
+Jean
+Pant
+Short
+Dress
+Skirt
+Sweater
+Sweatshirt
+Suit
+Swimsuit
+Cover-up
+Coat
+Hat
+Glove
+Scarf
+Laundry Kit
+Umbrella
+Leisure Shoe
+Hiking Boot
+Sneaker
+Snow Boot
+Dress Shoe
+Sandal
+Belt
+Tie
+Jewelry
+Purse
+Collapsible Tote
