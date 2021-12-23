@@ -6,14 +6,17 @@ p = inflect.engine()
 keywords = set()
 items = set()
 common_words = set(["of", "a", "the", "and", "or"])
-files = ["./toiletries/Items.txt", "./household-items/Items.txt", "./clothes/Items.txt"]
+files = ["./toiletries/Items.txt",
+         "./household-items/Items.txt", "./clothes/Items.txt"]
+
+
 def process_file(file_name):
     with open(file_name, "r", encoding="UTF-8") as f:
         for line in f:
             if "*" in line:
                 continue  # Skip categories for now
             if len(line.strip()) == 0:
-                continue 
+                continue
             item_name = line.strip().lower()
             item_name = item_name.translate(str.maketrans("", "", punctuation))
             item_name = item_name.translate(str.maketrans("", "", digits))
@@ -24,15 +27,16 @@ def process_file(file_name):
                 keywords.add(word)
                 keywords.add(p.plural_noun(word))
 
+
 for file in files:
     process_file(file)
-  
+
 print(f"Read in {len(keywords)} keywords.")
-f = open("./keywords.json", "w")
+f = open("../app/shoppings/src/app/shared/data/item-keywords.json", "w")
 f.write(json.dumps(list(keywords)))
 f.close()
 print(f"Read in {len(items)} item phrases.")
-f = open("./items.json", "w")
+f = open("../app/shoppings/src/app/shared/data/items.json", "w")
 f.write(json.dumps(list(items)))
 f.close()
 print("Done!")

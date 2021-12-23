@@ -20,11 +20,11 @@ with open("./Food.json", "r", encoding="UTF-8") as f:
             keywords.add(p.plural_noun(word))
 
 print(f"Read in {len(keywords)} keywords.")
-f = open("./keywords.json", "w")
+f = open("../../app/shoppings/src/app/shared/data/food-keywords.json", "w")
 f.write(json.dumps(list(keywords)))
 f.close()
 print(f"Read in {len(foods)} food phrases.")
-f = open("./common-foods.json", "w")
+f = open("../../app/shoppings/src/app/shared/data/common-foods.json", "w")
 f.write(json.dumps(list(foods)))
 f.close()
 print("Done!")

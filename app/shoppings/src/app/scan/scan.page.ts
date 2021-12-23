@@ -1,6 +1,10 @@
+/* eslint-disable guard-for-in */
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { createWorker, Word } from 'tesseract.js';
-import * as commonFoods from './common-foods.json';
+import * as foodKeywords from '../shared/data/food-keywords.json';
+import * as itemKeywords from '../shared/data/item-keywords.json';
+import * as foodItems from '../shared/data/common-foods.json';
+import * as itemItems from '../shared/data/items.json';
 
 @Component({
   selector: 'app-scan',
@@ -9,19 +13,28 @@ import * as commonFoods from './common-foods.json';
 })
 export class ScanPage implements OnInit, OnDestroy {
   content = null;
-  foodCache: Set<string> = new Set();
-  listItems: Set<string> = new Set();
+  itemCache: Set<string> = new Set();
+  allItems: string[] = [];
+  progress = 1;
   worker = createWorker({
-    logger: (m) => console.log(m), // Add logger here
+    logger: (m) => {
+      if (m.progress) {
+        this.progress = m.progress;
+      }
+    }, // Add logger here
   });
   constructor() {
-    // Disable ESLint as for some reason forEach fails
-    // eslint-disable-next-line guard-for-in
-    for (const ix in commonFoods) {
-      if (commonFoods[ix] === 'blackberries') {
-        console.log('have blackberries');
-      }
-      this.foodCache.add(commonFoods[ix]);
+    for (const ix in foodKeywords) {
+      this.itemCache.add(foodKeywords[ix]);
+    }
+    for (const ix in itemKeywords) {
+      this.itemCache.add(itemKeywords[ix]);
+    }
+    for (const ix in foodItems) {
+      this.allItems.push(foodItems[ix]);
+    }
+    for (const ix in itemItems) {
+      this.allItems.push(itemItems[ix]);
     }
   }
 
@@ -47,30 +60,47 @@ export class ScanPage implements OnInit, OnDestroy {
     await this.worker.terminate();
   }
 
-  scoreLine(words: Word[]): number {
-    let score = 0;
+  keywordMatches(words: Word[]): string[] {
+    const matches = new Set<string>();
     words.forEach((word: Word) => {
       const wordNoPunct = word.text
         .toLowerCase()
         .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
-      if (this.foodCache.has(wordNoPunct)) {
-        this.listItems.add(wordNoPunct);
-        score++;
+      if (this.itemCache.has(wordNoPunct)) {
+        matches.add(wordNoPunct);
       }
     });
-    return score;
+    return Array.from(matches);
+  }
+
+  itemMatches(text: string): string[] {
+    const matches = new Set<string>();
+    this.allItems.forEach((item: string) => {
+      const ix = text.indexOf(item);
+      if (ix !== -1) {
+        matches.add(item);
+      }
+    });
+    return Array.from(matches);
   }
 
   onScan(filename: string) {
     console.log('Scanning', filename);
-    this.listItems = new Set();
+    this.progress = 0;
     this.worker.recognize(`../assets/test-images/${filename}`).then((data) => {
       console.log(data);
-      const scores = data.data.lines.map(
-        (line) => this.scoreLine(line.words) / line.words.length
-      );
-      console.log('Scores', scores);
-      console.log(Array.from(this.listItems));
+      const matches = data.data.lines.map((line) => ({
+        text: line.text,
+        keywords: this.keywordMatches(line.words),
+      }));
+      const results = matches
+        .filter((match) => match.keywords.length > 0)
+        .map((match) => ({
+          text: match.text,
+          keywords: match.keywords,
+          items: this.itemMatches(match.text),
+        }));
+      console.log(results);
     });
   }
 }

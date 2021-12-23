@@ -1,0 +1,3 @@
+1. For each line, find any keywords (from common foods, toiletries or household items)
+2. For each line with keywords, repeat scan for multi-word phrases that contain the keywords. If multi-word phrase is found, it replaces the keyword 
+3. Output phrases along with confidence score (score from OCR)

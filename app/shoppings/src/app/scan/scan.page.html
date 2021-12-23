@@ -5,6 +5,18 @@
 </ion-header>
 
 <ion-content>
+  <div id="progress" *ngIf="progress<1" slot="fixed">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Scanning...</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-progress-bar [value]="progress"></ion-progress-bar>
+        This can take a little while. For better results, try to include just
+        the list that you want to import, and not an entire recipe.
+      </ion-card-content>
+    </ion-card>
+  </div>
   <img (click)="onScan('1.jpg')" src="../assets/test-images/1.jpg" />
   <img (click)="onScan('2.jpg')" src="../assets/test-images/2.jpg" />
   <img (click)="onScan('3.jpg')" src="../assets/test-images/3.jpg" />
