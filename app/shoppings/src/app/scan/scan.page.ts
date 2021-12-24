@@ -10,6 +10,7 @@ import * as itemItems from '../shared/data/items.json';
 import { ListItemService } from '../shared/services/list-item.service';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Camera, CameraResultType } from '@capacitor/camera';
+import { ToastController } from '@ionic/angular';
 
 @Component({
   selector: 'app-scan',
@@ -35,7 +36,8 @@ export class ScanPage implements OnInit, OnDestroy {
   constructor(
     private listItemService: ListItemService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toastCtrl: ToastController
   ) {
     for (const ix in foodKeywords) {
       this.itemCache.add(foodKeywords[ix]);
@@ -51,15 +53,45 @@ export class ScanPage implements OnInit, OnDestroy {
     }
   }
 
+  checkCameraPermissionsAndContinue() {
+    console.log('Checking camera permissions');
+    Camera.checkPermissions().then((authorized) => {
+      console.log('Initial camera permissions', authorized);
+      if (authorized && authorized.camera === 'granted') {
+        this.takePicture();
+        return;
+      }
+      Camera.requestPermissions().then((authorized2) => {
+        console.log('Camera permissions after request', authorized2);
+        if (authorized2 && authorized2.camera === 'granted') {
+          this.takePicture();
+          return;
+        }
+        this.presentToast('Camera could not be loaded');
+        return;
+      });
+    });
+  }
+
   ngOnInit() {
     this.step = 0;
+    console.log('Initializing worker');
     this.loadWorker().then(() => {
+      this.presentToast('Scanner initialized');
       this.step = 1;
-      this.takePicture();
+      this.checkCameraPermissionsAndContinue();
     });
     this.route.params.subscribe((params: Params) => {
       this.listID = params.id;
     });
+  }
+
+  async presentToast(msg: string) {
+    const toast = await this.toastCtrl.create({
+      message: msg,
+      duration: 1500,
+    });
+    toast.present();
   }
 
   onTryAgain() {
@@ -76,6 +108,7 @@ export class ScanPage implements OnInit, OnDestroy {
       this.onScan(image.webPath);
     } catch (ex) {
       console.error(ex);
+      console.log(self);
       this.router.navigate(['/list', this.listID]);
     }
   }
@@ -88,8 +121,11 @@ export class ScanPage implements OnInit, OnDestroy {
 
   async loadWorker() {
     await this.worker.load();
+    console.log('Worker loaded');
     await this.worker.loadLanguage('eng');
+    console.log('English language loaded');
     await this.worker.initialize('eng');
+    console.log('English language initialized');
   }
 
   async destroyWorker() {
