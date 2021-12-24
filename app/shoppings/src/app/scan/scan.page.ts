@@ -7,9 +7,9 @@ import * as foodKeywords from '../shared/data/food-keywords.json';
 import * as itemKeywords from '../shared/data/item-keywords.json';
 import * as foodItems from '../shared/data/common-foods.json';
 import * as itemItems from '../shared/data/items.json';
-import { serialize } from 'v8';
 import { ListItemService } from '../shared/services/list-item.service';
 import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Camera, CameraResultType } from '@capacitor/camera';
 
 @Component({
   selector: 'app-scan',
@@ -21,6 +21,7 @@ export class ScanPage implements OnInit, OnDestroy {
   itemCache: Set<string> = new Set();
   allItems: string[] = [];
   progress = 1;
+  confidence = 100;
   step = 1;
   results;
   listID: string;
@@ -51,12 +52,32 @@ export class ScanPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.step = 0;
     this.loadWorker().then(() => {
-      console.log('Worker loaded');
+      this.step = 1;
+      this.takePicture();
     });
     this.route.params.subscribe((params: Params) => {
       this.listID = params.id;
     });
+  }
+
+  onTryAgain() {
+    this.takePicture();
+  }
+
+  async takePicture() {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: true,
+        resultType: CameraResultType.Uri,
+      });
+      this.onScan(image.webPath);
+    } catch (ex) {
+      console.error(ex);
+      this.router.navigate(['/list', this.listID]);
+    }
   }
 
   ngOnDestroy() {
@@ -129,8 +150,9 @@ export class ScanPage implements OnInit, OnDestroy {
     console.log('Scanning', filename);
     this.progress = 0;
     this.step = 1;
-    this.worker.recognize(`../assets/test-images/${filename}`).then((data) => {
+    this.worker.recognize(filename).then((data) => {
       console.log(data);
+      this.confidence = data.data.confidence;
       const matches = data.data.lines.map((line) => ({
         text: line.text,
         keywords: this.keywordMatches(line.words),

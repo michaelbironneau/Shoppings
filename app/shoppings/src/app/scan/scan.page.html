@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Capture with camera</ion-title>
+    <ion-title>Scan with camera</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -16,6 +16,20 @@
     <ion-icon slot="start" name="add-outline"></ion-icon>
     Import
   </ion-button>
+  <ion-button expand="block" (click)="onTryAgain()">
+    <ion-icon slot="start" name="camera-outline"></ion-icon>
+    Try again
+  </ion-button>
+  <ion-text color="danger"
+    ><p *ngIf="confidence < 50">
+      That was a tough assignment! You'll get better results if you hold the
+      document square to the camera, with good lighting, and minimal movement.
+    </p>
+    <p>
+      If you're still having trouble getting good results, try bringing the
+      document closer to the camera.
+    </p>
+  </ion-text>
 </ion-content>
 
 <ion-content *ngIf="progress<1 && step === 1">
@@ -30,7 +44,7 @@
     </ion-card-content>
   </ion-card>
 </ion-content>
-
+<!--
 <ion-content *ngIf="progress===1&& step === 1">
   <img (click)="onScan('1.jpg')" src="../assets/test-images/1.jpg" />
   <img (click)="onScan('2.jpg')" src="../assets/test-images/2.jpg" />
@@ -38,3 +52,4 @@
   <img (click)="onScan('4.jpg')" src="../assets/test-images/4.jpg" />
   <img (click)="onScan('5.jpg')" src="../assets/test-images/5.jpg" />
 </ion-content>
+-->
