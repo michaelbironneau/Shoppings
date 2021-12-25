@@ -32,6 +32,14 @@ export class ScanPage implements OnInit, OnDestroy {
         this.progress = m.progress;
       }
     }, // Add logger here
+    errorHandler: (err) => {
+      console.error(err);
+      this.presentToast('Error initializing scanner');
+    },
+    cacheMethod: 'readOnly',
+    langPath: '/assets/tesseract/eng/traineddata',
+    workerPath: '/assets/tesseract/worker.min.js',
+    corePath: '/assets/tesseract/tesseract-core.wasm.js',
   });
   constructor(
     private listItemService: ListItemService,
@@ -121,7 +129,7 @@ export class ScanPage implements OnInit, OnDestroy {
 
   async loadWorker() {
     await this.worker.load();
-    console.log('Worker loaded');
+    console.log('Worker loaded v2');
     await this.worker.loadLanguage('eng');
     console.log('English language loaded');
     await this.worker.initialize('eng');
